@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Tax Owing Tracker</title>
 
 <style>
@@ -196,7 +195,6 @@ button:hover { background: #222; }
     </div>
   </div>
 </div>
-
 <div class="app">
 
 <div id="screen-main">
@@ -256,15 +254,61 @@ button:hover { background: #222; }
     <h1>Deduction Log</h1>
     <div id="deductionLog"></div>
 </div>
+</div>
 
+<div id="resetModal" class="hidden">
+    <div class="modal-backdrop" onclick="closeResetModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div style="margin-bottom:12px">Reset financial year?</div>
+            <div id="resetText" style="font-size:12px;opacity:.7;margin-bottom:16px"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button onclick="closeResetModal()">No</button>
+                <button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57">Yes</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-/* ===== ORIGINAL SCRIPT — UNCHANGED ===== */
+// onboarding slides
 const slides = [
-  { html: `<h1 style="margin-bottom:10px;">LISTEN UP.</h1><p style="font-size:13px;opacity:.8;">There are only <strong>two things</strong> you need to understand.</p>` },
-  { html: `<h1 style="margin-bottom:10px;">INCOME</h1><p style="font-size:13px;opacity:.8;">Income is <strong>money in</strong>.</p>` },
-  { html: `<h1 style="margin-bottom:10px;">DEDUCTION</h1><p style="font-size:13px;opacity:.8;">Money spent on your business.</p>` }
+  {
+    html: `
+      <h1 style="margin-bottom:10px;">LISTEN UP.</h1>
+      <p style="font-size:13px;opacity:.8;">
+        There are only <strong>two things</strong> you need to understand.
+      </p>
+    `
+  },
+  {
+    html: `
+      <h1 style="margin-bottom:10px;">INCOME</h1>
+      <p style="font-size:13px;opacity:.8;">
+        Income is <strong>money in</strong>.<br><br>
+        You sold a <strong>$5 sandwich today</strong>.<br>
+        Someone paid you <strong>$5 into your bank today</strong>.<br><br>
+        That is <strong>INCOME</strong>.
+      </p>
+    `
+  },
+  {
+    html: `
+      <h1 style="margin-bottom:10px;">DEDUCTION</h1>
+      <p style="font-size:13px;opacity:.8;">
+        A deduction is <strong>money you spent on your business</strong>.<br><br>
+        <strong>Example 1:</strong><br>
+        You spent <strong>$3 on bread</strong>, <strong>$2 on peanut butter</strong>,<br>
+        and <strong>$8 on a cool knife</strong> to spread the peanut butter with.<br><br>
+        <strong>BOOM.</strong> Those are <strong>DEDUCTIONS</strong>.<br><br>
+        <strong>Example 2:</strong><br>
+        You run a <strong>carpentry business</strong>.<br>
+        You buy a <strong>$10 hammer</strong>, <strong>$20 tool belt</strong>,
+        and a <strong>$200 Makita circular saw</strong>.<br><br>
+        <strong>BOOM.</strong> All of those are <strong>DEDUCTIONS</strong>.<br><br>
+        Now go. Get to it.
+      </p>
+    `
+  }
 ];
 
 let currentSlide = 0;
@@ -285,13 +329,17 @@ function renderSlide() {
 
 function nextSlide() {
   currentSlide++;
-  if (currentSlide >= slides.length) hideOnboarding();
-  else renderSlide();
+  if (currentSlide >= slides.length) {
+    hideOnboarding();
+  } else {
+    renderSlide();
+  }
 }
 
 if (!localStorage.getItem("seenOnboarding")) {
   window.addEventListener("load", showOnboarding);
 }
+
 
 const BASE = 18200;
 const TAX_RATE = 0.30;
@@ -350,9 +398,13 @@ function updateUI() {
     incomeDisplay.textContent = `$${(gross - ded).toLocaleString()}`;
 
     const tax = taxable * TAX_RATE;
-    taxEstimate.textContent = taxable > 0
-        ? `$${tax.toFixed(2)} tax owed estimate`
-        : "";
+    if (taxable > 0) {
+        taxEstimate.textContent = tax < 1
+            ? `${Math.round(tax * 100)}c tax owed estimate`
+            : `$${tax.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} tax owed estimate`;
+    } else {
+        taxEstimate.textContent = "";
+    }
 
     barFill.style.width = Math.min((taxable / MAX_RANGE) * 100, 100) + "%";
 
@@ -372,12 +424,11 @@ function renderLogs() {
 }
 
 function renderItem(item) {
-    return `<div class="log-item"><div class="log-top"><span>$${item.amount}</span></div><div class="desc">${item.desc || "—"}</div></div>`;
+    return `<div class=\"log-item\"><div class=\"log-top\"><span>$${item.amount.toLocaleString()}</span></div><div class=\"desc\">${item.desc || "—"}</div></div>`;
 }
 
 function renderItemWithDelete(type) {
-    return (item, i) =>
-        `<div class="log-item"><div class="log-top"><span>${type === "income" ? "$" : "-$"}${item.amount}</span><span class="delete" onclick="deleteEntry('${type}', ${i})">✕</span></div><div class="desc">${item.desc || "—"}</div></div>`;
+    return (item, i) => `<div class=\"log-item\"><div class=\"log-top\"><span>${type === "income" ? "$" : "-$"}${item.amount.toLocaleString()}</span><span class=\"delete\" onclick=\"deleteEntry('${type}', ${i})\">✕</span></div><div class=\"desc\">${item.desc || "—"}</div></div>`;
 }
 
 function addIncome() {
@@ -415,9 +466,43 @@ function showMain() { toggle("screen-main"); }
 function showIncome() { toggle("screen-income"); }
 function showDeductions() { toggle("screen-deduction"); }
 
+function changeFY(direction) {
+    const [start] = currentFY.split("-").map(Number);
+    const base = new Date().getMonth() >= 6 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+    const next = start + direction;
+    if (next < base - 3 || next > base + 3) return;
+
+    currentFY = `${next}-${next + 1}`;
+    ensureFY(currentFY);
+    incomes = store[currentFY].incomes;
+    deductions = store[currentFY].deductions;
+    setFYLabel();
+    updateUI();
+}
+
+function openResetModal() {
+    document.getElementById("resetText").textContent = `This will permanently delete all income and deductions for ${currentFY}.`;
+    document.getElementById("resetModal").classList.remove("hidden");
+}
+
+function closeResetModal() {
+    document.getElementById("resetModal").classList.add("hidden");
+}
+
+function doResetFY() {
+    incomes.length = 0;
+    deductions.length = 0;
+    updateUI();
+    closeResetModal();
+
+    // show onboarding slides after reset
+    currentSlide = 0;
+    document.getElementById("onboarding").classList.remove("hidden");
+    renderSlide();
+}
+
 setFYLabel();
 updateUI();
 </script>
-
 </body>
 </html>
