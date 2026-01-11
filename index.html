@@ -419,9 +419,17 @@ function renderPreviews() {
 }
 
 function renderLogs() {
-    incomeLog.innerHTML = incomes.slice().reverse().map(renderItemWithDelete("income")).join("");
-    deductionLog.innerHTML = deductions.slice().reverse().map(renderItemWithDelete("deduction")).join("");
+  incomeLog.innerHTML = incomes
+    .map((item, i) => renderItemWithDelete("income")(item, i))
+    .reverse()
+    .join("");
+
+  deductionLog.innerHTML = deductions
+    .map((item, i) => renderItemWithDelete("deduction")(item, i))
+    .reverse()
+    .join("");
 }
+
 
 function renderItem(item) {
     return `<div class=\"log-item\"><div class=\"log-top\"><span>$${item.amount.toLocaleString()}</span></div><div class=\"desc\">${item.desc || "—"}</div></div>`;
@@ -506,3 +514,4 @@ updateUI();
 </script>
 </body>
 </html>
+
