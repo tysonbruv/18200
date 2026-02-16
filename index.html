@@ -81,7 +81,7 @@
     #incomeDisplay { font-size: 15px; }
     #taxEstimate { font-size: 11px; color: var(--muted); }
 
-    /* NEW: rate label under tax estimate */
+    /* rate label under tax estimate */
     #rateLabel {
       font-size: 11px;
       color: #7a7a7a;
@@ -233,7 +233,6 @@
         <div class="totals">
           <div id="incomeDisplay">$0</div>
           <div id="taxEstimate"></div>
-          <!-- MOVED HERE: rate label under tax estimate -->
           <div id="rateLabel"></div>
         </div>
       </div>
@@ -376,6 +375,44 @@
     const MAX_RANGE = 50000;
     const STORAGE_KEY = "taxTrackerFY";
 
+    // NEW: bar caps at $150,000 (starts moving at $18,201)
+    const BAR_CAP = 150000;
+
+    // NEW: progressive brackets (marginal rates)
+    // 0 - 18,200: 0%
+    // 18,201 - 45,000: 19%
+    // 45,001 - 120,000: 32.5%
+    // 120,001 - 180,000: 37%
+    // 180,001+: 47%
+    function calcProgressiveTax(income) {
+      const x = Math.max(Number(income) || 0, 0);
+      let tax = 0;
+
+      if (x > BASE) {
+        tax += (Math.min(x, 45000) - BASE) * 0.19;
+      }
+      if (x > 45000) {
+        tax += (Math.min(x, 120000) - 45000) * 0.325;
+      }
+      if (x > 120000) {
+        tax += (Math.min(x, 180000) - 120000) * 0.37;
+      }
+      if (x > 180000) {
+        tax += (x - 180000) * 0.47;
+      }
+
+      return tax;
+    }
+
+    function marginalRateLabel(income) {
+      const x = Math.max(Number(income) || 0, 0);
+      if (x <= BASE) return "";
+      if (x <= 45000) return "19c owing for each $1";
+      if (x <= 120000) return "32.5c owing for each $1";
+      if (x <= 180000) return "37c owing for each $1";
+      return "47c owing for each $1";
+    }
+
     function getFinancialYear() {
       const d = new Date();
       const y = d.getFullYear();
@@ -423,13 +460,17 @@
 
     function updateUI() {
       const { gross, ded } = totals();
-      const taxableBase = Math.max(gross - BASE, 0);
-      const taxable = Math.max(taxableBase - ded, 0);
 
-      incomeDisplay.textContent = `$${(gross - ded).toLocaleString()}`;
+      // net income after deductions (your existing behavior)
+      const net = gross - ded;
 
-      const tax = taxable * TAX_RATE;
-      if (taxable > 0) {
+      // show net in the big number (unchanged)
+      incomeDisplay.textContent = `$${(net).toLocaleString()}`;
+
+      // NEW: progressive tax based on net income
+      const tax = calcProgressiveTax(net);
+
+      if (net > BASE) {
         taxEstimate.textContent =
           tax < 1
             ? `${Math.round(tax * 100)}c tax owed estimate`
@@ -441,17 +482,13 @@
         taxEstimate.textContent = "";
       }
 
-      barFill.style.width = Math.min((taxable / MAX_RANGE) * 100, 100) + "%";
+      // NEW: rate label under estimate (marginal)
+      rateLabel.textContent = marginalRateLabel(net);
 
-      // Rate label now sits under tax estimate
-      const net = gross - ded;
-      if (net > BASE) {
-        rateLabel.textContent = net <= 45000
-          ? "19c owing for each $1"
-          : "32.5c owing for each $1";
-      } else {
-        rateLabel.textContent = "";
-      }
+      // NEW: bar starts at 18,201 and caps (fills) at $150,000
+      const barNumerator = Math.max(net - BASE, 0);
+      const barDenominator = Math.max(BAR_CAP - BASE, 1);
+      barFill.style.width = Math.min((barNumerator / barDenominator) * 100, 100) + "%";
 
       renderPreviews();
       renderLogs();
