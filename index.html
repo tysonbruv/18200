@@ -14,6 +14,7 @@
     --muted:#9a9a9a;
     --accent:linear-gradient(90deg,#ff5f57,#ffb347);
 }
+
 *{box-sizing:border-box;}
 
 body{
@@ -37,7 +38,10 @@ body{
     overflow-y:auto;
 }
 
-h1{font-size:18px;margin:0 0 10px 0;}
+h1{
+    font-size:18px;
+    margin:0 0 10px 0;
+}
 
 .fy-row{
     display:flex;
@@ -57,11 +61,13 @@ h1{font-size:18px;margin:0 0 10px 0;}
 .numbers{
     display:flex;
     justify-content:space-between;
-    align-items:flex-start;
     margin-bottom:10px;
 }
 
-.threshold{font-size:13px;opacity:.7;}
+.threshold{
+    font-size:13px;
+    opacity:.7;
+}
 
 .totals{
     display:flex;
@@ -70,7 +76,10 @@ h1{font-size:18px;margin:0 0 10px 0;}
 }
 
 #incomeDisplay{font-size:15px;}
-#taxEstimate{font-size:11px;color:var(--muted);}
+#taxEstimate{
+    font-size:11px;
+    color:var(--muted);
+}
 
 .bar-container{
     height:10px;
@@ -81,7 +90,7 @@ h1{font-size:18px;margin:0 0 10px 0;}
 
 .bar-fill{
     height:100%;
-    width:0%;
+    width:0;
     background:var(--accent);
     transition:width .25s ease;
 }
@@ -109,10 +118,14 @@ input,button{
     border-radius:6px;
     font-size:13px;
 }
+
 button{cursor:pointer;}
 button:hover{background:#222;}
 
-.section{margin-bottom:14px;}
+.section{
+    margin-bottom:14px;
+}
+
 .section h2{
     display:flex;
     justify-content:space-between;
@@ -128,9 +141,23 @@ button:hover{background:#222;}
     margin-bottom:6px;
     font-size:13px;
 }
-.log-top{display:flex;justify-content:space-between;}
-.desc{font-size:12px;opacity:.6;margin-top:2px;}
-.delete{color:#ff5f57;cursor:pointer;font-size:12px;}
+
+.log-top{
+    display:flex;
+    justify-content:space-between;
+}
+
+.desc{
+    font-size:12px;
+    opacity:.6;
+    margin-top:2px;
+}
+
+.delete{
+    color:#ff5f57;
+    cursor:pointer;
+    font-size:12px;
+}
 
 .nav{margin-bottom:12px;}
 .hidden{display:none!important;}
@@ -153,11 +180,13 @@ button:hover{background:#222;}
 }
 </style>
 </head>
+
 <body>
 
 <div class="app">
 
 <div id="screen-main">
+
 <h1>Tax Owing Tracker</h1>
 
 <div class="fy-row">
@@ -203,6 +232,7 @@ The goal is to bring this back to $18,200.
     <h2>Deductions <button onclick="showDeductions()">View all</button></h2>
     <div id="deductionPreview"></div>
 </div>
+
 </div>
 
 <div id="screen-income" class="hidden">
@@ -219,17 +249,41 @@ The goal is to bring this back to $18,200.
 
 </div>
 
+<!-- RESET MODAL -->
+<div id="resetModal" class="hidden">
+<div class="modal-backdrop" onclick="closeResetModal()">
+<div class="modal" onclick="event.stopPropagation()">
+<div style="margin-bottom:12px">Reset financial year?</div>
+<div id="resetText" style="font-size:12px;opacity:.7;margin-bottom:16px"></div>
+<div style="display:flex;gap:8px;justify-content:flex-end">
+<button onclick="closeResetModal()">No</button>
+<button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57">Yes</button>
+</div>
+</div>
+</div>
+</div>
+
 <script>
 
 /* ---------- Progressive Tax ---------- */
 function calculateTax(income){
     if(income <= 18200) return 0;
-    if(income <= 45000) return (income - 18200)*0.19;
+
+    if(income <= 45000)
+        return (income - 18200) * 0.19;
+
     if(income <= 120000)
         return (45000-18200)*0.19 + (income-45000)*0.325;
+
     if(income <= 180000)
-        return (45000-18200)*0.19 + (120000-45000)*0.325 + (income-120000)*0.37;
-    return (45000-18200)*0.19 + (120000-45000)*0.325 + (180000-120000)*0.37 + (income-180000)*0.45;
+        return (45000-18200)*0.19 +
+               (120000-45000)*0.325 +
+               (income-120000)*0.37;
+
+    return (45000-18200)*0.19 +
+           (120000-45000)*0.325 +
+           (180000-120000)*0.37 +
+           (income-180000)*0.45;
 }
 
 function getMarginalRate(income){
@@ -240,7 +294,7 @@ function getMarginalRate(income){
     return 45;
 }
 
-/* ---------- Financial Year ---------- */
+/* ---------- FY ---------- */
 function getFinancialYear(){
     const d=new Date();
     const y=d.getFullYear();
@@ -287,16 +341,16 @@ function updateUI(){
     const {gross,ded}=totals();
     const net=gross-ded;
     const taxable=Math.max(net,0);
-
     const tax=calculateTax(taxable);
     const marginal=getMarginalRate(taxable);
 
     incomeDisplay.textContent=`$${net.toLocaleString()}`;
+
     taxEstimate.textContent=tax>0
         ?`$${tax.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} tax estimate`
         :"";
 
-    marginalRateEl.textContent = marginal>0 ? `${marginal}c` : "";
+    marginalRateEl.textContent=marginal>0?`${marginal}c`:"";
 
     barFill.style.width=Math.min((taxable/50000)*100,100)+"%";
 
@@ -316,20 +370,11 @@ function renderLogs(){
 }
 
 function renderItem(item){
-    return `<div class="log-item">
-        <div class="log-top"><span>$${item.amount.toLocaleString()}</span></div>
-        <div class="desc">${item.desc||"—"}</div>
-    </div>`;
+    return `<div class="log-item"><div class="log-top"><span>$${item.amount.toLocaleString()}</span></div><div class="desc">${item.desc||"—"}</div></div>`;
 }
 
 function renderItemWithDelete(type){
-    return (item,i)=>`<div class="log-item">
-        <div class="log-top">
-            <span>${type==="income"?"$":"-$"}${item.amount.toLocaleString()}</span>
-            <span class="delete" onclick="deleteEntry('${type}',${i})">✕</span>
-        </div>
-        <div class="desc">${item.desc||"—"}</div>
-    </div>`;
+    return (item,i)=>`<div class="log-item"><div class="log-top"><span>${type==="income"?"$":"-$"}${item.amount.toLocaleString()}</span><span class="delete" onclick="deleteEntry('${type}',${i})">✕</span></div><div class="desc">${item.desc||"—"}</div></div>`;
 }
 
 /* ---------- Actions ---------- */
@@ -349,10 +394,7 @@ function deleteEntry(type,index){
     type==="income"?incomes.splice(index,1):deductions.splice(index,1);
     updateUI();
 }
-function clearInputs(){
-    amountInput.value="";
-    descInput.value="";
-}
+function clearInputs(){amountInput.value="";descInput.value="";}
 
 /* ---------- Navigation ---------- */
 function toggle(id){
