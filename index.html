@@ -81,6 +81,13 @@
     #incomeDisplay { font-size: 15px; }
     #taxEstimate { font-size: 11px; color: var(--muted); }
 
+    /* NEW: rate label under tax estimate */
+    #rateLabel {
+      font-size: 11px;
+      color: #7a7a7a;
+      opacity: 0.8;
+    }
+
     .bar-container {
       height: 10px;
       background: var(--border);
@@ -226,15 +233,13 @@
         <div class="totals">
           <div id="incomeDisplay">$0</div>
           <div id="taxEstimate"></div>
+          <!-- MOVED HERE: rate label under tax estimate -->
+          <div id="rateLabel"></div>
         </div>
       </div>
 
-      <!-- BAR + RIGHT SIDE RATE LABEL -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
-        <div class="bar-container" style="flex:1;margin-bottom:0;">
-          <div class="bar-fill" id="barFill"></div>
-        </div>
-        <div id="rateLabel" style="font-size:11px;color:#7a7a7a;opacity:0.8;white-space:nowrap;"></div>
+      <div class="bar-container">
+        <div class="bar-fill" id="barFill"></div>
       </div>
 
       <div style="font-size:11px;color:#7a7a7a;opacity:0.8;margin:-10px 0 14px 0;">
@@ -438,7 +443,7 @@
 
       barFill.style.width = Math.min((taxable / MAX_RANGE) * 100, 100) + "%";
 
-      // Right-side label: show 19c or 32.5c per $1 (based on net income)
+      // Rate label now sits under tax estimate
       const net = gross - ded;
       if (net > BASE) {
         rateLabel.textContent = net <= 45000
