@@ -170,6 +170,22 @@
       border-radius: 12px;
       width: 300px;
     }
+
+    /* HELP BUTTON (question mark in a square) */
+    .help-btn {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0.85;
+    }
+    .help-btn:hover { opacity: 1; }
   </style>
 </head>
 
@@ -194,7 +210,15 @@
           <span id="fyText"></span>
           <button onclick="changeFY(1)">→</button>
         </div>
-        <button onclick="openResetModal()" style="font-size:11px;opacity:.6">Reset FY</button>
+
+        <!-- RIGHT SIDE: reset + help -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <!-- Reset now happens immediately (no modal popup) -->
+          <button onclick="doResetFY()" style="font-size:11px;opacity:.6">Reset FY</button>
+
+          <!-- Question mark in a square to open the "LISTEN UP" slides -->
+          <button class="help-btn" onclick="openHelp()">?</button>
+        </div>
       </div>
 
       <div class="numbers">
@@ -205,8 +229,12 @@
         </div>
       </div>
 
-      <div class="bar-container">
-        <div class="bar-fill" id="barFill"></div>
+      <!-- BAR + RIGHT SIDE RATE LABEL -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <div class="bar-container" style="flex:1;margin-bottom:0;">
+          <div class="bar-fill" id="barFill"></div>
+        </div>
+        <div id="rateLabel" style="font-size:11px;color:#7a7a7a;opacity:0.8;white-space:nowrap;"></div>
       </div>
 
       <div style="font-size:11px;color:#7a7a7a;opacity:0.8;margin:-10px 0 14px 0;">
@@ -332,6 +360,12 @@
       window.addEventListener("load", showOnboarding);
     }
 
+    // Help button: open the same "LISTEN UP" slides anytime
+    function openHelp() {
+      currentSlide = 0;
+      showOnboarding();
+    }
+
     const BASE = 18200;
     const TAX_RATE = 0.30;
     const MAX_RANGE = 50000;
@@ -364,6 +398,7 @@
     const deductionPreview = document.getElementById("deductionPreview");
     const incomeLog = document.getElementById("incomeLog");
     const deductionLog = document.getElementById("deductionLog");
+    const rateLabel = document.getElementById("rateLabel");
 
     function setFYLabel() {
       document.getElementById("fyText").textContent = `Financial Year: ${currentFY}`;
@@ -402,6 +437,16 @@
       }
 
       barFill.style.width = Math.min((taxable / MAX_RANGE) * 100, 100) + "%";
+
+      // Right-side label: show 19c or 32.5c per $1 (based on net income)
+      const net = gross - ded;
+      if (net > BASE) {
+        rateLabel.textContent = net <= 45000
+          ? "19c owing for each $1"
+          : "32.5c owing for each $1";
+      } else {
+        rateLabel.textContent = "";
+      }
 
       renderPreviews();
       renderLogs();
