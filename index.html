@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -29,31 +28,15 @@ body {
 
 h1 {
     font-size: 18px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     font-weight: 600;
     opacity: 0.9;
 }
 
-.fy-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+#fyLabel {
     font-size: 12px;
-    opacity: 0.7;
-    margin-bottom: 12px;
-}
-
-.fy-arrow {
-    cursor: pointer;
     opacity: 0.6;
-    user-select: none;
-}
-
-.fy-arrow:hover { opacity: 1; }
-
-.fy-arrow.disabled {
-    opacity: 0.25;
-    pointer-events: none;
+    margin-bottom: 12px;
 }
 
 .numbers {
@@ -111,6 +94,8 @@ button:hover {
     font-size: 13px;
     opacity: 0.7;
     margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
 }
 
 .log-item {
@@ -131,96 +116,112 @@ button:hover {
     opacity: 0.7;
     margin-top: 2px;
 }
-</style>
 
+.delete {
+    color: #ff5f57;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.hidden {
+    display: none;
+}
+</style>
 </head>
 
 <body>
 
 <div class="app">
 
-<h1>Tax Owing Tracker</h1>
+<!-- MAIN SCREEN -->
+<div id="screen-main">
+    <h1>Tax Owing Tracker</h1>
+    <div id="fyLabel">Financial Year: —</div>
 
-<div class="fy-row">
-    <span class="fy-arrow" onclick="prevFY()">←</span>
-    <span id="fyLabel">Financial Year</span>
-    <span class="fy-arrow" id="nextArrow" onclick="nextFY()">→</span>
+    <div class="numbers">
+        <div>$18,200</div>
+        <div id="incomeDisplay">$0</div>
+    </div>
+
+    <div class="bar-container">
+        <div class="bar-fill" id="barFill"></div>
+    </div>
+
+    <div class="controls">
+        <input id="amountInput" type="number" placeholder="Amount $" />
+        <input id="descInput" type="text" placeholder="Description" />
+        <button onclick="addIncome()">Add Income</button>
+        <button onclick="addDeduction()">Add Deduction</button>
+    </div>
+
+    <div class="section">
+        <h2>Income <button onclick="showIncome()">View all</button></h2>
+        <div id="incomePreview"></div>
+    </div>
+
+    <div class="section">
+        <h2>Deductions <button onclick="showDeductions()">View all</button></h2>
+        <div id="deductionPreview"></div>
+    </div>
 </div>
 
-<div class="numbers">
-    <div>$18,200</div>
-    <div id="incomeDisplay">$0</div>
+<!-- INCOME LOG -->
+<div id="screen-income" class="hidden">
+    <div class="nav"><button onclick="showMain()">← Back</button></div>
+    <h1>Income Log</h1>
+    <div id="incomeLog"></div>
 </div>
 
-<div class="bar-container">
-    <div class="bar-fill" id="barFill"></div>
-</div>
-
-<div class="controls">
-    <input id="amountInput" type="number" placeholder="Amount $" />
-    <input id="descInput" type="text" placeholder="Description" />
-    <button onclick="addIncome()">Add Income</button>
-    <button onclick="addDeduction()">Add Deduction</button>
-</div>
-
-<div class="section">
-    <h2>Income</h2>
-    <div id="incomePreview"></div>
-</div>
-
-<div class="section">
-    <h2>Deductions</h2>
-    <div id="deductionPreview"></div>
+<!-- DEDUCTION LOG -->
+<div id="screen-deduction" class="hidden">
+    <div class="nav"><button onclick="showMain()">← Back</button></div>
+    <h1>Deduction Log</h1>
+    <div id="deductionLog"></div>
 </div>
 
 </div>
 
 <script>
 const BASE = 18200;
-const MAX_RANGE = 50000;
+const maxRange = 50000;
 const STORAGE_KEY = "taxTrackerFY";
 
-function fyString(start) {
-    return `${start}-${start + 1}`;
-}
-
-function getCurrentFYStart() {
+function getFinancialYear() {
     const d = new Date();
-    return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
+    const y = d.getFullYear();
+    return d.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 }
 
-let currentFYStart = getCurrentFYStart();
-let store = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-let incomes = [];
-let deductions = [];
+const currentFY = getFinancialYear();
+document.getElementById("fyLabel").textContent = `Financial Year: ${currentFY}`;
 
-const fyLabel = document.getElementById("fyLabel");
-const nextArrow = document.getElementById("nextArrow");
+let store = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+store[currentFY] ||= { incomes: [], deductions: [] };
+
+// keep only current + previous FY
+const fyKeys = Object.keys(store).sort();
+while (fyKeys.length > 2) delete store[fyKeys.shift()];
+
+let incomes = store[currentFY].incomes;
+let deductions = store[currentFY].deductions;
+
 const incomeDisplay = document.getElementById("incomeDisplay");
 const barFill = document.getElementById("barFill");
 const amountInput = document.getElementById("amountInput");
 const descInput = document.getElementById("descInput");
 const incomePreview = document.getElementById("incomePreview");
 const deductionPreview = document.getElementById("deductionPreview");
-
-function loadFY() {
-    const fy = fyString(currentFYStart);
-    store[fy] ||= { incomes: [], deductions: [] };
-
-    const keys = Object.keys(store).sort();
-    while (keys.length > 2) delete store[keys.shift()];
-
-    incomes = store[fy].incomes;
-    deductions = store[fy].deductions;
-
-    fyLabel.textContent = `Financial Year: ${fy}`;
-    nextArrow.classList.toggle("disabled", currentFYStart >= getCurrentFYStart());
-
-    updateUI();
-}
+const incomeLog = document.getElementById("incomeLog");
+const deductionLog = document.getElementById("deductionLog");
 
 function save() {
-    store[fyString(currentFYStart)] = { incomes, deductions };
+    store[currentFY] = { incomes, deductions };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
@@ -233,14 +234,21 @@ function calculateTotal() {
 function updateUI() {
     const total = calculateTotal();
     incomeDisplay.textContent = `$${total.toLocaleString()}`;
-
     const taxable = Math.max(total - BASE, 0);
-    barFill.style.width = Math.min((taxable / MAX_RANGE) * 100, 100) + "%";
+    barFill.style.width = Math.min((taxable / maxRange) * 100, 100) + "%";
+    renderPreviews();
+    renderLogs();
+    save();
+}
 
+function renderPreviews() {
     incomePreview.innerHTML = incomes.slice(-3).reverse().map(renderItem).join("");
     deductionPreview.innerHTML = deductions.slice(-3).reverse().map(renderItem).join("");
+}
 
-    save();
+function renderLogs() {
+    incomeLog.innerHTML = incomes.map(renderItemWithDelete("income")).join("");
+    deductionLog.innerHTML = deductions.map(renderItemWithDelete("deduction")).join("");
 }
 
 function renderItem(item) {
@@ -251,10 +259,21 @@ function renderItem(item) {
     </div>`;
 }
 
+function renderItemWithDelete(type) {
+    return (item, i) => `
+    <div class="log-item">
+        <div class="log-top">
+            <span>${type === "income" ? "$" : "-$"}${item.amount.toLocaleString()}</span>
+            <span class="delete" onclick="deleteEntry('${type}', ${i})">✕</span>
+        </div>
+        <div class="desc">${item.desc || "—"}</div>
+    </div>`;
+}
+
 function addIncome() {
     const amount = Number(amountInput.value);
     if (!amount) return;
-    incomes.push({ amount, desc: descInput.value, time: Date.now() });
+    incomes.push({ amount, desc: descInput.value, time: Date.now(), fy: currentFY });
     clearInputs();
     updateUI();
 }
@@ -262,8 +281,13 @@ function addIncome() {
 function addDeduction() {
     const amount = Number(amountInput.value);
     if (!amount) return;
-    deductions.push({ amount, desc: descInput.value, time: Date.now() });
+    deductions.push({ amount, desc: descInput.value, time: Date.now(), fy: currentFY });
     clearInputs();
+    updateUI();
+}
+
+function deleteEntry(type, index) {
+    type === "income" ? incomes.splice(index, 1) : deductions.splice(index, 1);
     updateUI();
 }
 
@@ -272,19 +296,16 @@ function clearInputs() {
     descInput.value = "";
 }
 
-function prevFY() {
-    currentFYStart--;
-    loadFY();
+function toggle(id) {
+    document.querySelectorAll("[id^='screen']").forEach(s => s.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
 }
 
-function nextFY() {
-    if (currentFYStart < getCurrentFYStart()) {
-        currentFYStart++;
-        loadFY();
-    }
-}
+const showMain = () => toggle("screen-main");
+const showIncome = () => toggle("screen-income");
+const showDeductions = () => toggle("screen-deduction");
 
-loadFY();
+updateUI();
 </script>
 
 </body>
