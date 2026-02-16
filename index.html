@@ -220,8 +220,8 @@
 
         <!-- RIGHT SIDE: reset + help -->
         <div style="display:flex;align-items:center;gap:8px;">
-          <!-- Reset now happens immediately (no modal popup) -->
-          <button onclick="doResetFY()" style="font-size:11px;opacity:.6">Reset FY</button>
+          <!-- CHANGED: reset now opens confirm modal -->
+          <button onclick="openResetModal()" style="font-size:11px;opacity:.6">Reset FY</button>
 
           <!-- Question mark in a square to open the "LISTEN UP" slides -->
           <button class="help-btn" onclick="openHelp()">?</button>
@@ -276,14 +276,14 @@
     </div>
   </div>
 
+  <!-- RESET CONFIRM MODAL (already existed; now used) -->
   <div id="resetModal" class="hidden">
     <div class="modal-backdrop" onclick="closeResetModal()">
       <div class="modal" onclick="event.stopPropagation()">
-        <div style="margin-bottom:12px">Reset financial year?</div>
-        <div id="resetText" style="font-size:12px;opacity:.7;margin-bottom:16px"></div>
+        <div id="resetText" style="margin-bottom:16px;font-size:13px;opacity:.9"></div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button onclick="closeResetModal()">No</button>
-          <button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57">Yes</button>
+          <button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57;color:#fff;">Yes</button>
         </div>
       </div>
     </div>
@@ -375,15 +375,10 @@
     const MAX_RANGE = 50000;
     const STORAGE_KEY = "taxTrackerFY";
 
-    // NEW: bar caps at $150,000 (starts moving at $18,201)
+    // bar caps at $150,000 (starts moving at $18,201)
     const BAR_CAP = 150000;
 
-    // NEW: progressive brackets (marginal rates)
-    // 0 - 18,200: 0%
-    // 18,201 - 45,000: 19%
-    // 45,001 - 120,000: 32.5%
-    // 120,001 - 180,000: 37%
-    // 180,001+: 47%
+    // progressive brackets (marginal rates)
     function calcProgressiveTax(income) {
       const x = Math.max(Number(income) || 0, 0);
       let tax = 0;
@@ -467,7 +462,7 @@
       // show net in the big number (unchanged)
       incomeDisplay.textContent = `$${(net).toLocaleString()}`;
 
-      // NEW: progressive tax based on net income
+      // progressive tax based on net income
       const tax = calcProgressiveTax(net);
 
       if (net > BASE) {
@@ -482,10 +477,10 @@
         taxEstimate.textContent = "";
       }
 
-      // NEW: rate label under estimate (marginal)
+      // rate label under estimate (marginal)
       rateLabel.textContent = marginalRateLabel(net);
 
-      // NEW: bar starts at 18,201 and caps (fills) at $150,000
+      // bar starts at 18,201 and caps (fills) at $150,000
       const barNumerator = Math.max(net - BASE, 0);
       const barDenominator = Math.max(BAR_CAP - BASE, 1);
       barFill.style.width = Math.min((barNumerator / barDenominator) * 100, 100) + "%";
@@ -590,7 +585,7 @@
 
     function openResetModal() {
       document.getElementById("resetText").textContent =
-        `This will permanently delete all income and deductions for ${currentFY}.`;
+        `Are you sure you want to reset ${currentFY}?`;
       document.getElementById("resetModal").classList.remove("hidden");
     }
 
