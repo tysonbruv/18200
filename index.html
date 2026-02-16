@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tax Owing Tracker</title>
 
 <style>
@@ -219,6 +220,17 @@ The goal is to bring this back to $18,200.
 
 </div>
 
+<!-- RESET MODAL -->
+<div id="resetModal" class="modal-backdrop hidden">
+  <div class="modal">
+    <div id="resetText" style="margin-bottom:12px;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;">
+      <button onclick="closeResetModal()">Cancel</button>
+      <button onclick="doResetFY()" style="background:#ff5f57;">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 /* ---------- Progressive Tax ---------- */
@@ -238,6 +250,22 @@ function getMarginalRate(income){
     if(income <= 120000) return 32.5;
     if(income <= 180000) return 37;
     return 45;
+}
+
+function nextBracketTop(income){
+    if(income <= 18200) return 18200;
+    if(income <= 45000) return 45000;
+    if(income <= 120000) return 120000;
+    if(income <= 180000) return 180000;
+    return income;
+}
+
+function calculateTaxSaved(amount){
+    const {gross,ded} = totals();
+    const net = gross - ded;
+    const before = calculateTax(net + amount);
+    const after = calculateTax(net);
+    return before - after;
 }
 
 /* ---------- Financial Year ---------- */
@@ -287,7 +315,6 @@ function updateUI(){
     const {gross,ded}=totals();
     const net=gross-ded;
     const taxable=Math.max(net,0);
-
     const tax=calculateTax(taxable);
     const marginal=getMarginalRate(taxable);
 
@@ -298,7 +325,8 @@ function updateUI(){
 
     marginalRateEl.textContent = marginal>0 ? `${marginal}c` : "";
 
-    barFill.style.width=Math.min((taxable/50000)*100,100)+"%";
+    const bracketTop = nextBracketTop(taxable);
+    barFill.style.width = Math.min((taxable / bracketTop) * 100, 100) + "%";
 
     renderPreviews();
     renderLogs();
@@ -328,6 +356,10 @@ function renderItemWithDelete(type){
             <span>${type==="income"?"$":"-$"}${item.amount.toLocaleString()}</span>
             <span class="delete" onclick="deleteEntry('${type}',${i})">✕</span>
         </div>
+        ${type==="deduction" ? 
+        `<div style="font-size:11px;color:#ffb347;">
+            Saved ~$${calculateTaxSaved(item.amount).toFixed(0)} tax
+        </div>` : ""}
         <div class="desc">${item.desc||"—"}</div>
     </div>`;
 }
