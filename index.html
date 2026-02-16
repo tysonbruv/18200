@@ -5,7 +5,7 @@
 <title>Tax Owing Tracker</title>
 
 <style>
-:root {
+:root{
     --bg:#0e0e0e;
     --panel:#161616;
     --panel-dark:#111;
@@ -15,6 +15,7 @@
     --accent:linear-gradient(90deg,#ff5f57,#ffb347);
 }
 *{box-sizing:border-box;}
+
 body{
     margin:0;
     height:100vh;
@@ -25,6 +26,7 @@ body{
     color:var(--text);
     font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
 }
+
 .app{
     width:420px;
     background:var(--panel);
@@ -34,17 +36,71 @@ body{
     max-height:90vh;
     overflow-y:auto;
 }
+
 h1{font-size:18px;margin:0 0 10px 0;}
-.fy-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-.fy-controls{display:flex;align-items:center;gap:8px;font-size:12px;opacity:.8;}
-.numbers{display:flex;justify-content:space-between;margin-bottom:10px;}
+
+.fy-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:14px;
+}
+
+.fy-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    opacity:.8;
+}
+
+.numbers{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:10px;
+}
+
 .threshold{font-size:13px;opacity:.7;}
-.totals{display:flex;flex-direction:column;align-items:flex-end;}
+
+.totals{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+}
+
 #incomeDisplay{font-size:15px;}
 #taxEstimate{font-size:11px;color:var(--muted);}
-.bar-container{height:10px;background:var(--border);border-radius:999px;overflow:hidden;margin-bottom:18px;}
-.bar-fill{height:100%;width:0;background:var(--accent);transition:width .25s ease;}
-.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+
+.bar-container{
+    height:10px;
+    background:var(--border);
+    border-radius:999px;
+    overflow:hidden;
+}
+
+.bar-fill{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    transition:width .25s ease;
+}
+
+#marginalRate{
+    font-size:11px;
+    color:var(--muted);
+    text-align:right;
+    margin-top:6px;
+    margin-bottom:14px;
+}
+
+.controls{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:16px;
+}
+
 input,button{
     background:#0f0f0f;
     border:1px solid #333;
@@ -55,8 +111,16 @@ input,button{
 }
 button{cursor:pointer;}
 button:hover{background:#222;}
+
 .section{margin-bottom:14px;}
-.section h2{display:flex;justify-content:space-between;font-size:13px;margin:0 0 6px 0;opacity:.7;}
+.section h2{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    margin:0 0 6px 0;
+    opacity:.7;
+}
+
 .log-item{
     background:var(--panel-dark);
     padding:6px 8px;
@@ -67,8 +131,10 @@ button:hover{background:#222;}
 .log-top{display:flex;justify-content:space-between;}
 .desc{font-size:12px;opacity:.6;margin-top:2px;}
 .delete{color:#ff5f57;cursor:pointer;font-size:12px;}
+
 .nav{margin-bottom:12px;}
 .hidden{display:none!important;}
+
 .modal-backdrop{
     position:fixed;
     inset:0;
@@ -78,6 +144,7 @@ button:hover{background:#222;}
     justify-content:center;
     z-index:999;
 }
+
 .modal{
     background:var(--panel);
     padding:20px;
@@ -87,16 +154,6 @@ button:hover{background:#222;}
 </style>
 </head>
 <body>
-
-<!-- ONBOARDING -->
-<div id="onboarding" class="modal-backdrop hidden">
-  <div class="modal" style="width:320px;">
-    <div id="slide-content"></div>
-    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-      <button onclick="nextSlide()">Continue</button>
-    </div>
-  </div>
-</div>
 
 <div class="app">
 
@@ -123,6 +180,8 @@ button:hover{background:#222;}
 <div class="bar-container">
     <div class="bar-fill" id="barFill"></div>
 </div>
+
+<div id="marginalRate"></div>
 
 <div style="font-size:11px;color:#7a7a7a;margin:-10px 0 14px 0;">
 The goal is to bring this back to $18,200.
@@ -160,51 +219,28 @@ The goal is to bring this back to $18,200.
 
 </div>
 
-<!-- RESET MODAL -->
-<div id="resetModal" class="hidden">
-<div class="modal-backdrop" onclick="closeResetModal()">
-<div class="modal" onclick="event.stopPropagation()">
-<div style="margin-bottom:12px">Reset financial year?</div>
-<div id="resetText" style="font-size:12px;opacity:.7;margin-bottom:16px"></div>
-<div style="display:flex;gap:8px;justify-content:flex-end">
-<button onclick="closeResetModal()">No</button>
-<button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57">Yes</button>
-</div>
-</div>
-</div>
-</div>
-
 <script>
 
 /* ---------- Progressive Tax ---------- */
 function calculateTax(income){
-    let tax = 0;
-
     if(income <= 18200) return 0;
-
-    if(income <= 45000){
-        tax = (income - 18200) * 0.19;
-    }
-    else if(income <= 120000){
-        tax = (45000 - 18200) * 0.19
-            + (income - 45000) * 0.325;
-    }
-    else if(income <= 180000){
-        tax = (45000 - 18200) * 0.19
-            + (120000 - 45000) * 0.325
-            + (income - 120000) * 0.37;
-    }
-    else{
-        tax = (45000 - 18200) * 0.19
-            + (120000 - 45000) * 0.325
-            + (180000 - 120000) * 0.37
-            + (income - 180000) * 0.45;
-    }
-
-    return tax;
+    if(income <= 45000) return (income - 18200)*0.19;
+    if(income <= 120000)
+        return (45000-18200)*0.19 + (income-45000)*0.325;
+    if(income <= 180000)
+        return (45000-18200)*0.19 + (120000-45000)*0.325 + (income-120000)*0.37;
+    return (45000-18200)*0.19 + (120000-45000)*0.325 + (180000-120000)*0.37 + (income-180000)*0.45;
 }
 
-/* ---------- FY ---------- */
+function getMarginalRate(income){
+    if(income <= 18200) return 0;
+    if(income <= 45000) return 19;
+    if(income <= 120000) return 32.5;
+    if(income <= 180000) return 37;
+    return 45;
+}
+
+/* ---------- Financial Year ---------- */
 function getFinancialYear(){
     const d=new Date();
     const y=d.getFullYear();
@@ -228,6 +264,7 @@ function save(){
 const incomeDisplay=document.getElementById("incomeDisplay");
 const taxEstimate=document.getElementById("taxEstimate");
 const barFill=document.getElementById("barFill");
+const marginalRateEl=document.getElementById("marginalRate");
 const amountInput=document.getElementById("amountInput");
 const descInput=document.getElementById("descInput");
 const incomePreview=document.getElementById("incomePreview");
@@ -250,12 +287,16 @@ function updateUI(){
     const {gross,ded}=totals();
     const net=gross-ded;
     const taxable=Math.max(net,0);
+
     const tax=calculateTax(taxable);
+    const marginal=getMarginalRate(taxable);
 
     incomeDisplay.textContent=`$${net.toLocaleString()}`;
     taxEstimate.textContent=tax>0
         ?`$${tax.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} tax estimate`
         :"";
+
+    marginalRateEl.textContent = marginal>0 ? `${marginal}c` : "";
 
     barFill.style.width=Math.min((taxable/50000)*100,100)+"%";
 
@@ -275,11 +316,20 @@ function renderLogs(){
 }
 
 function renderItem(item){
-    return `<div class="log-item"><div class="log-top"><span>$${item.amount.toLocaleString()}</span></div><div class="desc">${item.desc||"—"}</div></div>`;
+    return `<div class="log-item">
+        <div class="log-top"><span>$${item.amount.toLocaleString()}</span></div>
+        <div class="desc">${item.desc||"—"}</div>
+    </div>`;
 }
 
 function renderItemWithDelete(type){
-    return (item,i)=>`<div class="log-item"><div class="log-top"><span>${type==="income"?"$":"-$"}${item.amount.toLocaleString()}</span><span class="delete" onclick="deleteEntry('${type}',${i})">✕</span></div><div class="desc">${item.desc||"—"}</div></div>`;
+    return (item,i)=>`<div class="log-item">
+        <div class="log-top">
+            <span>${type==="income"?"$":"-$"}${item.amount.toLocaleString()}</span>
+            <span class="delete" onclick="deleteEntry('${type}',${i})">✕</span>
+        </div>
+        <div class="desc">${item.desc||"—"}</div>
+    </div>`;
 }
 
 /* ---------- Actions ---------- */
@@ -299,7 +349,10 @@ function deleteEntry(type,index){
     type==="income"?incomes.splice(index,1):deductions.splice(index,1);
     updateUI();
 }
-function clearInputs(){amountInput.value="";descInput.value="";}
+function clearInputs(){
+    amountInput.value="";
+    descInput.value="";
+}
 
 /* ---------- Navigation ---------- */
 function toggle(id){
