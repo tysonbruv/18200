@@ -1,38 +1,27 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <title>Tax Owing Tracker</title>
 
 <style>
-:root {
-    --bg: #0e0e0e;
-    --panel: #161616;
-    --panel-dark: #111;
-    --border: #2a2a2a;
-    --text: #f5f5f5;
-    --muted: #7a7a7a;
-    --accent: linear-gradient(90deg, #ff5f57, #ffb347);
-}
-
-* { box-sizing: border-box; }
-
 body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg);
-    color: var(--text);
     font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0e0e0e;
+    color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
 }
 
 .app {
     width: 420px;
-    background: var(--panel);
+    background: #161616;
     padding: 24px;
-    border-radius: 16px;
+    border-radius: 14px;
     box-shadow: 0 0 40px rgba(0,0,0,0.6);
     max-height: 90vh;
     overflow-y: auto;
@@ -40,68 +29,54 @@ body {
 
 h1 {
     font-size: 18px;
-    margin: 0 0 10px 0;
+    margin-bottom: 4px;
     font-weight: 600;
+    opacity: 0.9;
 }
 
 .fy-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    gap: 10px;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 12px;
 }
 
-.fy-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    opacity: 0.8;
+.fy-arrow {
+    cursor: pointer;
+    opacity: 0.6;
+    user-select: none;
+}
+
+.fy-arrow:hover { opacity: 1; }
+
+.fy-arrow.disabled {
+    opacity: 0.25;
+    pointer-events: none;
 }
 
 .numbers {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    font-size: 14px;
+    opacity: 0.85;
     margin-bottom: 10px;
-}
-
-.threshold {
-    font-size: 13px;
-    opacity: 0.7;
-}
-
-.totals {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-}
-
-#incomeDisplay {
-    font-size: 15px;
 }
 
 .bar-container {
     height: 10px;
-    background: var(--border);
+    background: #2a2a2a;
     border-radius: 999px;
     overflow: hidden;
+    margin-bottom: 18px;
 }
 
 .bar-fill {
     height: 100%;
     width: 0%;
-    background: var(--accent);
+    background: linear-gradient(90deg, #ff5f57, #ffb347);
     transition: width 0.25s ease;
-}
-
-#marginalRate {
-    font-size: 11px;
-    color: var(--muted);
-    text-align: right;
-    margin-top: 6px;
-    margin-bottom: 14px;
 }
 
 .controls {
@@ -114,30 +89,32 @@ h1 {
 input, button {
     background: #0f0f0f;
     border: 1px solid #333;
-    color: var(--text);
+    color: #fff;
     padding: 8px;
     border-radius: 6px;
     font-size: 13px;
 }
 
-button { cursor: pointer; }
-button:hover { background: #222; }
+button {
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2a2a2a;
+}
 
 .section {
     margin-bottom: 14px;
 }
 
 .section h2 {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     font-size: 13px;
-    margin: 0 0 6px 0;
     opacity: 0.7;
+    margin-bottom: 6px;
 }
 
 .log-item {
-    background: var(--panel-dark);
+    background: #111;
     padding: 6px 8px;
     border-radius: 6px;
     margin-bottom: 6px;
@@ -151,12 +128,11 @@ button:hover { background: #222; }
 
 .desc {
     font-size: 12px;
-    opacity: 0.6;
+    opacity: 0.7;
     margin-top: 2px;
 }
-
-.hidden { display: none !important; }
 </style>
+
 </head>
 
 <body>
@@ -166,25 +142,19 @@ button:hover { background: #222; }
 <h1>Tax Owing Tracker</h1>
 
 <div class="fy-row">
-    <div class="fy-controls">
-        <button onclick="changeFY(-1)">←</button>
-        <span id="fyText"></span>
-        <button onclick="changeFY(1)">→</button>
-    </div>
+    <span class="fy-arrow" onclick="prevFY()">←</span>
+    <span id="fyLabel">Financial Year</span>
+    <span class="fy-arrow" id="nextArrow" onclick="nextFY()">→</span>
 </div>
 
 <div class="numbers">
-    <div class="threshold">$18,200</div>
-    <div class="totals">
-        <div id="incomeDisplay">$0</div>
-    </div>
+    <div>$18,200</div>
+    <div id="incomeDisplay">$0</div>
 </div>
 
 <div class="bar-container">
     <div class="bar-fill" id="barFill"></div>
 </div>
-
-<div id="marginalRate"></div>
 
 <div class="controls">
     <input id="amountInput" type="number" placeholder="Amount $" />
@@ -210,66 +180,62 @@ const BASE = 18200;
 const MAX_RANGE = 50000;
 const STORAGE_KEY = "taxTrackerFY";
 
-function getFinancialYear() {
+function fyString(start) {
+    return `${start}-${start + 1}`;
+}
+
+function getCurrentFYStart() {
     const d = new Date();
-    const y = d.getFullYear();
-    return d.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+    return d.getMonth() >= 6 ? d.getFullYear() : d.getFullYear() - 1;
 }
 
-let currentFY = getFinancialYear();
+let currentFYStart = getCurrentFYStart();
 let store = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+let incomes = [];
+let deductions = [];
 
-function ensureFY(fy) {
-    if (!store[fy]) store[fy] = { incomes: [], deductions: [] };
-}
-
-ensureFY(currentFY);
-
-let incomes = store[currentFY].incomes;
-let deductions = store[currentFY].deductions;
-
+const fyLabel = document.getElementById("fyLabel");
+const nextArrow = document.getElementById("nextArrow");
 const incomeDisplay = document.getElementById("incomeDisplay");
 const barFill = document.getElementById("barFill");
-const marginalRateEl = document.getElementById("marginalRate");
 const amountInput = document.getElementById("amountInput");
 const descInput = document.getElementById("descInput");
 const incomePreview = document.getElementById("incomePreview");
 const deductionPreview = document.getElementById("deductionPreview");
 
-function setFYLabel() {
-    document.getElementById("fyText").textContent = `Financial Year: ${currentFY}`;
+function loadFY() {
+    const fy = fyString(currentFYStart);
+    store[fy] ||= { incomes: [], deductions: [] };
+
+    const keys = Object.keys(store).sort();
+    while (keys.length > 2) delete store[keys.shift()];
+
+    incomes = store[fy].incomes;
+    deductions = store[fy].deductions;
+
+    fyLabel.textContent = `Financial Year: ${fy}`;
+    nextArrow.classList.toggle("disabled", currentFYStart >= getCurrentFYStart());
+
+    updateUI();
 }
 
 function save() {
-    store[currentFY] = { incomes, deductions };
+    store[fyString(currentFYStart)] = { incomes, deductions };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
 }
 
-function totals() {
-    return {
-        gross: incomes.reduce((a, b) => a + b.amount, 0),
-        ded: deductions.reduce((a, b) => a + b.amount, 0)
-    };
-}
-
-function getMarginalRate(incomeAfterDeductions) {
-    if (incomeAfterDeductions <= 18200) return 0;
-    if (incomeAfterDeductions <= 45000) return 19;
-    if (incomeAfterDeductions <= 120000) return 32.5;
-    if (incomeAfterDeductions <= 180000) return 37;
-    return 45;
+function calculateTotal() {
+    const inc = incomes.reduce((a, b) => a + b.amount, 0);
+    const ded = deductions.reduce((a, b) => a + b.amount, 0);
+    return Math.max(0, inc - ded);
 }
 
 function updateUI() {
-    const { gross, ded } = totals();
-    const net = gross - ded;
-    const taxable = Math.max(net - BASE, 0);
+    const total = calculateTotal();
+    incomeDisplay.textContent = `$${total.toLocaleString()}`;
 
-    incomeDisplay.textContent = `$${net.toLocaleString()}`;
+    const taxable = Math.max(total - BASE, 0);
     barFill.style.width = Math.min((taxable / MAX_RANGE) * 100, 100) + "%";
-
-    const rate = getMarginalRate(net);
-    marginalRateEl.textContent = rate > 0 ? `${rate}c` : "";
 
     incomePreview.innerHTML = incomes.slice(-3).reverse().map(renderItem).join("");
     deductionPreview.innerHTML = deductions.slice(-3).reverse().map(renderItem).join("");
@@ -280,9 +246,7 @@ function updateUI() {
 function renderItem(item) {
     return `
     <div class="log-item">
-        <div class="log-top">
-            <span>$${item.amount.toLocaleString()}</span>
-        </div>
+        <div class="log-top"><span>$${item.amount.toLocaleString()}</span></div>
         <div class="desc">${item.desc || "—"}</div>
     </div>`;
 }
@@ -290,7 +254,7 @@ function renderItem(item) {
 function addIncome() {
     const amount = Number(amountInput.value);
     if (!amount) return;
-    incomes.push({ amount, desc: descInput.value });
+    incomes.push({ amount, desc: descInput.value, time: Date.now() });
     clearInputs();
     updateUI();
 }
@@ -298,7 +262,7 @@ function addIncome() {
 function addDeduction() {
     const amount = Number(amountInput.value);
     if (!amount) return;
-    deductions.push({ amount, desc: descInput.value });
+    deductions.push({ amount, desc: descInput.value, time: Date.now() });
     clearInputs();
     updateUI();
 }
@@ -308,19 +272,19 @@ function clearInputs() {
     descInput.value = "";
 }
 
-function changeFY(direction) {
-    const [start] = currentFY.split("-").map(Number);
-    const next = start + direction;
-    currentFY = `${next}-${next + 1}`;
-    ensureFY(currentFY);
-    incomes = store[currentFY].incomes;
-    deductions = store[currentFY].deductions;
-    setFYLabel();
-    updateUI();
+function prevFY() {
+    currentFYStart--;
+    loadFY();
 }
 
-setFYLabel();
-updateUI();
+function nextFY() {
+    if (currentFYStart < getCurrentFYStart()) {
+        currentFYStart++;
+        loadFY();
+    }
+}
+
+loadFY();
 </script>
 
 </body>
