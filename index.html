@@ -108,8 +108,6 @@ button:hover{background:#222}
 
 .section{margin-bottom:14px}
 .section h2{
- display:flex;
- justify-content:space-between;
  font-size:13px;
  margin:0 0 6px 0;
  opacity:.7;
@@ -121,9 +119,16 @@ button:hover{background:#222}
  margin-bottom:6px;
  font-size:13px;
 }
-.log-top{display:flex;justify-content:space-between}
+.log-top{
+ display:flex;
+ justify-content:space-between;
+}
 .desc{font-size:12px;opacity:.6;margin-top:2px}
-.delete{color:#ff5f57;cursor:pointer;font-size:12px}
+.delete{
+ color:#ff5f57;
+ cursor:pointer;
+ font-size:12px;
+}
 
 .hidden{display:none!important}
 
@@ -146,7 +151,6 @@ button:hover{background:#222}
 </head>
 <body>
 
-<!-- HELP MODAL -->
 <div id="onboarding" class="modal-backdrop hidden">
  <div class="modal">
    <div id="slide-content"></div>
@@ -156,7 +160,6 @@ button:hover{background:#222}
  </div>
 </div>
 
-<!-- RESET MODAL -->
 <div id="resetModal" class="modal-backdrop hidden">
  <div class="modal">
    <div style="margin-bottom:12px">Reset financial year?</div>
@@ -169,7 +172,6 @@ button:hover{background:#222}
 </div>
 
 <div class="app">
-
 <h1>Tax Owing Tracker</h1>
 
 <div class="fy-row">
@@ -185,7 +187,7 @@ button:hover{background:#222}
 </div>
 
 <div class="numbers">
- <div class="threshold">$18,200</div>
+ <div class="threshold">$18,200 tax-free threshold</div>
  <div class="totals">
    <div id="incomeDisplay">$0</div>
    <div id="taxEstimate"></div>
@@ -198,7 +200,7 @@ button:hover{background:#222}
 <div id="taxRateLabel"></div>
 
 <div class="controls">
- <input id="amountInput" type="number" placeholder="Amount $">
+ <input id="amountInput" type="number" placeholder="Amount $" min="0" step="0.01">
  <input id="descInput" type="text" placeholder="Description">
  <button onclick="addIncome()">Add Income</button>
  <button onclick="addDeduction()">Add Deduction</button>
@@ -213,25 +215,24 @@ button:hover{background:#222}
  <h2>Deductions</h2>
  <div id="deductionPreview"></div>
 </div>
-
 </div>
 
 <script>
 
-/* -------- Progressive Tax Brackets -------- */
+/* -------- Stage 3 Tax Brackets (2024+) -------- */
 function calculateTax(income){
  if(income<=18200) return 0;
- if(income<=45000) return (income-18200)*0.19;
- if(income<=120000) return (45000-18200)*0.19+(income-45000)*0.325;
- if(income<=180000) return (45000-18200)*0.19+(120000-45000)*0.325+(income-120000)*0.37;
- return (45000-18200)*0.19+(120000-45000)*0.325+(180000-120000)*0.37+(income-180000)*0.45;
+ if(income<=45000) return (income-18200)*0.16;
+ if(income<=135000) return (45000-18200)*0.16+(income-45000)*0.30;
+ if(income<=190000) return (45000-18200)*0.16+(135000-45000)*0.30+(income-135000)*0.37;
+ return (45000-18200)*0.16+(135000-45000)*0.30+(190000-135000)*0.37+(income-190000)*0.45;
 }
 
 function currentMarginalRate(income){
  if(income<=18200) return 0;
- if(income<=45000) return 0.19;
- if(income<=120000) return 0.325;
- if(income<=180000) return 0.37;
+ if(income<=45000) return 0.16;
+ if(income<=135000) return 0.30;
+ if(income<=190000) return 0.37;
  return 0.45;
 }
 
@@ -241,10 +242,12 @@ function getFinancialYear(){
  const y=d.getFullYear();
  return d.getMonth()>=6?`${y}-${y+1}`:`${y-1}-${y}`;
 }
+
 let currentFY=getFinancialYear();
 const STORAGE_KEY="taxTrackerFY";
 let store=JSON.parse(localStorage.getItem(STORAGE_KEY))||{};
 if(!store[currentFY]) store[currentFY]={incomes:[],deductions:[]};
+
 let incomes=store[currentFY].incomes;
 let deductions=store[currentFY].deductions;
 
@@ -258,10 +261,6 @@ const incomeDisplay=document.getElementById("incomeDisplay");
 const taxEstimate=document.getElementById("taxEstimate");
 const taxRateLabel=document.getElementById("taxRateLabel");
 const barFill=document.getElementById("barFill");
-const amountInput=document.getElementById("amountInput");
-const descInput=document.getElementById("descInput");
-const incomePreview=document.getElementById("incomePreview");
-const deductionPreview=document.getElementById("deductionPreview");
 
 function setFYLabel(){
  document.getElementById("fyText").textContent=`Financial Year: ${currentFY}`;
@@ -276,46 +275,60 @@ function totals(){
 
 function updateUI(){
  const {gross,ded}=totals();
- const net=gross-ded;
- const taxable=Math.max(net,0);
- const tax=calculateTax(taxable);
+ const net=Math.max(gross-ded,0);
+ const tax=calculateTax(net);
 
  incomeDisplay.textContent=`$${net.toLocaleString()}`;
  taxEstimate.textContent=tax>0
-   ?`$${tax.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})} tax estimate`
+   ?`Estimated tax: $${tax.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}`
    :"";
 
- const rate=currentMarginalRate(taxable);
- taxRateLabel.textContent=rate>0?`${(rate*100).toFixed(rate===0.325?1:0)}c`:"";
+ const rate=currentMarginalRate(net);
+ taxRateLabel.textContent=rate>0?`Marginal rate: ${(rate*100)}%`:"";
 
- barFill.style.width=Math.min((taxable/50000)*100,100)+"%";
+ barFill.style.width=Math.min((net/200000)*100,100)+"%";
 
- incomePreview.innerHTML=incomes.slice(-3).reverse().map(renderItem).join("");
- deductionPreview.innerHTML=deductions.slice(-3).reverse().map(renderItem).join("");
+ document.getElementById("incomePreview").innerHTML=
+   incomes.map((item,i)=>renderItem(item,i,"income")).reverse().join("");
+
+ document.getElementById("deductionPreview").innerHTML=
+   deductions.map((item,i)=>renderItem(item,i,"deduction")).reverse().join("");
 
  save();
 }
 
-function renderItem(item){
+function renderItem(item,index,type){
  return `<div class="log-item">
-   <div class="log-top"><span>$${item.amount.toLocaleString()}</span></div>
+   <div class="log-top">
+     <span>$${item.amount.toLocaleString()}</span>
+     <span class="delete" onclick="deleteItem('${type}',${index})">✕</span>
+   </div>
    <div class="desc">${item.desc||"—"}</div>
  </div>`;
 }
 
 /* -------- Actions -------- */
 function addIncome(){
- const amount=Number(amountInput.value);
- if(!amount)return;
- incomes.push({amount,desc:descInput.value});
- amountInput.value="";descInput.value="";
+ const amount=parseFloat(document.getElementById("amountInput").value);
+ if(isNaN(amount)||amount<=0)return;
+ incomes.push({amount,desc:document.getElementById("descInput").value.trim()});
+ document.getElementById("amountInput").value="";
+ document.getElementById("descInput").value="";
  updateUI();
 }
+
 function addDeduction(){
- const amount=Number(amountInput.value);
- if(!amount)return;
- deductions.push({amount,desc:descInput.value});
- amountInput.value="";descInput.value="";
+ const amount=parseFloat(document.getElementById("amountInput").value);
+ if(isNaN(amount)||amount<=0)return;
+ deductions.push({amount,desc:document.getElementById("descInput").value.trim()});
+ document.getElementById("amountInput").value="";
+ document.getElementById("descInput").value="";
+ updateUI();
+}
+
+function deleteItem(type,index){
+ if(type==="income") incomes.splice(index,1);
+ else deductions.splice(index,1);
  updateUI();
 }
 
@@ -339,10 +352,13 @@ function closeResetModal(){
  document.getElementById("resetModal").classList.add("hidden");
 }
 function doResetFY(){
- incomes.length=0;
- deductions.length=0;
- updateUI();
+ delete store[currentFY];
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(store));
+ store[currentFY]={incomes:[],deductions:[]};
+ incomes=store[currentFY].incomes;
+ deductions=store[currentFY].deductions;
  closeResetModal();
+ updateUI();
 }
 
 /* -------- Help Slides -------- */
@@ -350,16 +366,17 @@ const slides=[
  {html:`<h2>Income</h2><p>Money you earn from customers.</p>`},
  {html:`<h2>Deduction</h2><p>Business expenses reduce taxable income.</p>`}
 ];
-let currentSlide=0;
+
 function showOnboarding(){
+ currentSlide=0;
  document.getElementById("onboarding").classList.remove("hidden");
  document.getElementById("slide-content").innerHTML=slides[currentSlide].html;
 }
+let currentSlide=0;
 function nextSlide(){
  currentSlide++;
  if(currentSlide>=slides.length){
    document.getElementById("onboarding").classList.add("hidden");
-   currentSlide=0;
  }else{
    document.getElementById("slide-content").innerHTML=slides[currentSlide].html;
  }
