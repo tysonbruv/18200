@@ -599,10 +599,7 @@
       updateUI();
       closeResetModal();
 
-      // show onboarding slides after reset
-      currentSlide = 0;
-      document.getElementById("onboarding").classList.remove("hidden");
-      renderSlide();
+      // NOTE: Removed the onboarding "LISTEN UP" popup on reset (only change).
     }
 
     setFYLabel();
