@@ -1,317 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Tax Owing Tracker</title>
+<meta charset="UTF-8" />
+<title>Tax Owing Tracker</title>
 
-  <style>
-    :root {
-      --bg: #0e0e0e;
-      --panel: #161616;
-      --panel-dark: #111;
-      --border: #2a2a2a;
-      --text: #f5f5f5;
-      --muted: #9a9a9a;
-      --accent: linear-gradient(90deg, #ff5f57, #ffb347);
-    }
+<style>
+:root {
+  --bg: #0e0e0e;
+  --panel: #161616;
+  --panel-dark: #111;
+  --border: #2a2a2a;
+  --text: #f5f5f5;
+  --muted: #9a9a9a;
+  --accent: linear-gradient(90deg, #ff5f57, #ffb347);
+}
 
-    * { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
 
-    .app {
-      width: 420px;
-      background: var(--panel);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 0 40px rgba(0,0,0,0.6);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
+.app {
+  width: 420px;
+  background: var(--panel);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.6);
+  max-height: 90vh;
+  overflow-y: auto;
+}
 
-    h1 {
-      font-size: 18px;
-      margin: 0 0 10px 0;
-      font-weight: 600;
-    }
+h1 {
+  font-size: 18px;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
 
-    .fy-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
+.fy-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
 
-    .fy-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      opacity: 0.8;
-    }
+.fy-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
 
-    .numbers {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 10px;
-    }
+.numbers {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
 
-    .threshold {
-      font-size: 13px;
-      opacity: 0.7;
-    }
+.threshold {
+  font-size: 13px;
+  opacity: 0.7;
+}
 
-    .totals {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 2px;
-    }
+.totals {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
 
-    #incomeDisplay { font-size: 15px; }
-    #taxEstimate { font-size: 11px; color: var(--muted); }
+#incomeDisplay { font-size: 15px; }
+#taxEstimate { font-size: 11px; color: var(--muted); }
 
-    #rateLabel {
-      font-size: 11px;
-      color: #7a7a7a;
-      opacity: 0.8;
-    }
+#rateLabel {
+  font-size: 11px;
+  color: #7a7a7a;
+  opacity: 0.8;
+}
 
-    .bar-container {
-      height: 10px;
-      background: var(--border);
-      border-radius: 999px;
-      overflow: hidden;
-      margin-bottom: 18px;
-    }
+.bar-container {
+  height: 10px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
 
-    .bar-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--accent);
-      transition: width 0.25s ease;
-    }
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
 
-    input, button {
-      background: #0f0f0f;
-      border: 1px solid #333;
-      color: var(--text);
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 13px;
-    }
+input, button {
+  background: #0f0f0f;
+  border: 1px solid #333;
+  color: var(--text);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
 
-    button { cursor: pointer; }
-    button:hover { background: #222; }
+button { cursor: pointer; }
+button:hover { background: #222; }
 
-    .section { margin-bottom: 14px; }
+.section { margin-bottom: 14px; }
 
-    .section h2 {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      margin: 0 0 6px 0;
-      opacity: 0.7;
-    }
+.section h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  margin: 0 0 6px 0;
+  opacity: 0.7;
+}
 
-    .log-item {
-      background: var(--panel-dark);
-      padding: 6px 8px;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      font-size: 13px;
-    }
+.log-item {
+  background: var(--panel-dark);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
 
-    .log-top {
-      display: flex;
-      justify-content: space-between;
-    }
+.log-top {
+  display: flex;
+  justify-content: space-between;
+}
 
-    .desc {
-      font-size: 12px;
-      opacity: 0.6;
-      margin-top: 2px;
-    }
+.desc {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 2px;
+}
 
-    .delete {
-      color: #ff5f57;
-      cursor: pointer;
-      font-size: 12px;
-    }
+.delete {
+  color: #ff5f57;
+  cursor: pointer;
+  font-size: 12px;
+}
 
-    .nav { margin-bottom: 12px; }
-    .hidden { display: none !important; }
+.nav { margin-bottom: 12px; }
+.hidden { display: none !important; }
 
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
 
-    .modal {
-      background: var(--panel);
-      padding: 20px;
-      border-radius: 12px;
-      width: 300px;
-    }
+.modal {
+  background: var(--panel);
+  padding: 20px;
+  border-radius: 12px;
+  width: 300px;
+}
 
-    .help-btn {
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 1;
-      opacity: 0.85;
-    }
-    .help-btn:hover { opacity: 1; }
-  </style>
+.help-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 14px;
+  opacity: 0.85;
+}
+</style>
 </head>
 
 <body>
-  <div id="onboarding" class="modal-backdrop hidden">
-    <div class="modal" style="width:320px;">
-      <div id="slide-content"></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-        <button onclick="nextSlide()">Continue</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="app">
-    <div id="screen-main">
-      <h1>Tax Owing Tracker</h1>
+<div class="app">
+<h1>Tax Owing Tracker</h1>
 
-      <div class="fy-row">
-        <div class="fy-controls">
-          <button onclick="changeFY(-1)">←</button>
-          <span id="fyText"></span>
-          <button onclick="changeFY(1)">→</button>
-        </div>
+<div class="numbers">
+<div class="threshold">$18,200</div>
+<div class="totals">
+<div id="incomeDisplay">$0</div>
+<div id="taxEstimate"></div>
+<div id="rateLabel"></div>
+</div>
+</div>
 
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button onclick="openResetModal()" style="font-size:11px;opacity:.6">Reset FY</button>
-          <button class="help-btn" onclick="openHelp()">?</button>
-        </div>
-      </div>
+<div class="bar-container">
+<div class="bar-fill" id="barFill"></div>
+</div>
 
-      <div class="numbers">
-        <div class="threshold">$18,200</div>
-        <div class="totals">
-          <div id="incomeDisplay">$0</div>
-          <div id="taxEstimate"></div>
-          <div id="rateLabel"></div>
-        </div>
-      </div>
+<div class="controls">
+<input id="amountInput" type="number" placeholder="Amount $" />
+<input id="descInput" type="text" placeholder="Description" />
+<button onclick="addIncome()">Add Income</button>
+<button onclick="addDeduction()">Add Deduction</button>
+</div>
 
-      <div class="bar-container">
-        <div class="bar-fill" id="barFill"></div>
-      </div>
+</div>
 
-      <div style="font-size:11px;color:#7a7a7a;opacity:0.8;margin:-10px 0 14px 0;">
-        The goal is to bring this back to $18,200.
-      </div>
+<script>
 
-      <div class="controls">
-        <input id="amountInput" type="number" placeholder="Amount $" />
-        <input id="descInput" type="text" placeholder="Description" />
-        <button onclick="addIncome()">Add Income</button>
-        <button onclick="addDeduction()">Add Deduction</button>
-      </div>
+const BASE = 18200;
+const BAR_CAP = 150000;
 
-      <div class="section">
-        <h2>Income <button onclick="showIncome()">View all</button></h2>
-        <div id="incomePreview"></div>
-      </div>
+function calcProgressiveTax(income) {
+  const x = Math.max(Number(income) || 0, 0);
+  let tax = 0;
 
-      <div class="section">
-        <h2>Deductions <button onclick="showDeductions()">View all</button></h2>
-        <div id="deductionPreview"></div>
-      </div>
-    </div>
+  if (x > BASE) {
+    tax += (Math.min(x, 45000) - BASE) * 0.19;
+  }
+  if (x > 45000) {
+    tax += (Math.min(x, 120000) - 45000) * 0.325;
+  }
+  if (x > 120000) {
+    tax += (Math.min(x, 180000) - 120000) * 0.37;
+  }
+  if (x > 180000) {
+    tax += (x - 180000) * 0.47;
+  }
 
-    <div id="screen-income" class="hidden">
-      <div class="nav"><button onclick="showMain()">← Back</button></div>
-      <h1>Income Log</h1>
-      <div id="incomeLog"></div>
-    </div>
+  return tax;
+}
 
-    <div id="screen-deduction" class="hidden">
-      <div class="nav"><button onclick="showMain()">← Back</button></div>
-      <h1>Deduction Log</h1>
-      <div id="deductionLog"></div>
-    </div>
-  </div>
+function marginalRateLabel(income) {
+  const x = Math.max(Number(income) || 0, 0);
+  if (x <= BASE) return "";
+  if (x <= 45000) return "19c owing for each $1";
+  if (x <= 120000) return "32.5c owing for each $1";
+  if (x <= 180000) return "37c owing for each $1";
+  return "47c owing for each $1";
+}
 
-  <div id="resetModal" class="hidden">
-    <div class="modal-backdrop" onclick="closeResetModal()">
-      <div class="modal" onclick="event.stopPropagation()">
-        <div id="resetText" style="margin-bottom:16px;font-size:13px;opacity:.9"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button onclick="closeResetModal()">No</button>
-          <button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57;color:#fff;">Yes</button>
-        </div>
-      </div>
-    </div>
-  </div>
+let incomes = [];
+let deductions = [];
 
-  <script>
-    const BASE = 18200;
+const incomeDisplay = document.getElementById("incomeDisplay");
+const taxEstimate = document.getElementById("taxEstimate");
+const rateLabel = document.getElementById("rateLabel");
+const barFill = document.getElementById("barFill");
 
-    function calcProgressiveTax(income) {
-      const x = Math.max(Number(income) || 0, 0);
-      let tax = 0;
+function updateUI() {
+  const gross = incomes.reduce((a, b) => a + b.amount, 0);
+  const ded = deductions.reduce((a, b) => a + b.amount, 0);
+  const net = gross - ded;
 
-      if (x > BASE) {
-        tax += (Math.min(x, 45000) - BASE) * 0.19;
-      }
-      if (x > 45000) {
-        tax += (Math.min(x, 120000) - 45000) * 0.30; // CHANGED
-      }
-      if (x > 120000) {
-        tax += (Math.min(x, 180000) - 120000) * 0.37;
-      }
-      if (x > 180000) {
-        tax += (x - 180000) * 0.47;
-      }
+  incomeDisplay.textContent = `$${net.toLocaleString()}`;
 
-      return tax;
-    }
+  const tax = calcProgressiveTax(net);
 
-    function marginalRateLabel(income) {
-      const x = Math.max(Number(income) || 0, 0);
-      if (x <= BASE) return "";
-      if (x <= 45000) return "19c owing for each $1";
-      if (x <= 120000) return "30c owing for each $1"; // CHANGED
-      if (x <= 180000) return "37c owing for each $1";
-      return "47c owing for each $1";
-    }
-  </script>
+  taxEstimate.textContent = net > BASE
+    ? `$${tax.toFixed(2)} tax owed estimate`
+    : "";
+
+  rateLabel.textContent = marginalRateLabel(net);
+
+  const barNumerator = Math.max(net - BASE, 0);
+  const barDenominator = BAR_CAP - BASE;
+
+  barFill.style.width =
+    Math.min((barNumerator / barDenominator) * 100, 100) + "%";
+}
+
+function addIncome() {
+  const amount = Number(document.getElementById("amountInput").value);
+  if (!amount) return;
+  incomes.push({ amount });
+  updateUI();
+}
+
+function addDeduction() {
+  const amount = Number(document.getElementById("amountInput").value);
+  if (!amount) return;
+  deductions.push({ amount });
+  updateUI();
+}
+
+updateUI();
+
+</script>
+
 </body>
 </html>
