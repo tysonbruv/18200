@@ -54,6 +54,8 @@
     /* FY controls now stack date range above the FY text (like your screenshot) */
     .fy-controls {
       display: flex;
+      align-items: center;
+      gap: 8px;
       flex-direction: column;
       align-items: flex-start;
       gap: 2px;
@@ -74,8 +76,6 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 12px;
-      opacity: 0.8;
     }
 
     .numbers {
@@ -232,6 +232,9 @@
 
       <div class="fy-row">
         <div class="fy-controls">
+          <button onclick="changeFY(-1)">←</button>
+          <span id="fyText"></span>
+          <button onclick="changeFY(1)">→</button>
           <!-- NEW: date range labels above Financial Year -->
           <div class="fy-dates">
             <span>July 1</span>
@@ -243,9 +246,6 @@
             <span id="fyText"></span>
             <button onclick="changeFY(1)">→</button>
           </div>
-          <button onclick="changeFY(-1)">←</button>
-          <span id="fyText"></span>
-          <button onclick="changeFY(1)">→</button>
         </div>
 
         <!-- RIGHT SIDE: reset + help -->
@@ -366,7 +366,6 @@
             <strong>BOOM.</strong> More deductions.<br><br>
 
             <strong>Deductions lower your taxable income.</strong>
-            Now go. Get to it.
           </p>
         `
       }
