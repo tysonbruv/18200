@@ -51,31 +51,12 @@
       margin-bottom: 14px;
     }
 
-    /* FY controls now stack date range above the FY text (like your screenshot) */
     .fy-controls {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 2px;
       font-size: 12px;
       opacity: 0.8;
-    }
-
-    .fy-dates {
-      display: flex;
-      gap: 8px;
-      font-size: 11px;
-      color: var(--muted);
-      opacity: 0.9;
-      margin-left: 116px; /* nudged further right */
-    }
-
-    .fy-nav {
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
 
     .numbers {
@@ -235,17 +216,6 @@
           <button onclick="changeFY(-1)">←</button>
           <span id="fyText"></span>
           <button onclick="changeFY(1)">→</button>
-          <!-- NEW: date range labels above Financial Year -->
-          <div class="fy-dates">
-            <span>July 1</span>
-            <span>June 30</span>
-          </div>
-
-          <div class="fy-nav">
-            <button onclick="changeFY(-1)">←</button>
-            <span id="fyText"></span>
-            <button onclick="changeFY(1)">→</button>
-          </div>
         </div>
 
         <!-- RIGHT SIDE: reset + help -->
@@ -359,13 +329,7 @@
 
             <strong>BOOM.</strong> All of those are <strong>DEDUCTIONS</strong>.<br><br>
 
-            <strong>Example 3:</strong><br>
-            You want to start a <strong>lawn mowering business</strong>, so you go knock on peoples doors and say you'll mow their lawn for cheap, but you don't have a lawn mower.<br><br>
-            So you go buy a <strong>$900 lawn mower</strong>, <strong>$600 whipper snipper</strong>, <strong>$400 leaf blower</strong>.<br><br>
-
-            <strong>BOOM.</strong> More deductions.<br><br>
-
-            <strong>Deductions lower your taxable income.</strong>
+            Now go. Get to it.
           </p>
         `
       }
