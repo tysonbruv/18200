@@ -81,7 +81,6 @@
     #incomeDisplay { font-size: 15px; }
     #taxEstimate { font-size: 11px; color: var(--muted); }
 
-    /* rate label under tax estimate */
     #rateLabel {
       font-size: 11px;
       color: #7a7a7a;
@@ -178,7 +177,6 @@
       width: 300px;
     }
 
-    /* HELP BUTTON (question mark in a square) */
     .help-btn {
       width: 28px;
       height: 28px;
@@ -197,7 +195,6 @@
 </head>
 
 <body>
-  <!-- ONBOARDING OVERLAY -->
   <div id="onboarding" class="modal-backdrop hidden">
     <div class="modal" style="width:320px;">
       <div id="slide-content"></div>
@@ -218,12 +215,8 @@
           <button onclick="changeFY(1)">→</button>
         </div>
 
-        <!-- RIGHT SIDE: reset + help -->
         <div style="display:flex;align-items:center;gap:8px;">
-          <!-- CHANGED: reset now opens confirm modal -->
           <button onclick="openResetModal()" style="font-size:11px;opacity:.6">Reset FY</button>
-
-          <!-- Question mark in a square to open the "LISTEN UP" slides -->
           <button class="help-btn" onclick="openHelp()">?</button>
         </div>
       </div>
@@ -276,7 +269,6 @@
     </div>
   </div>
 
-  <!-- RESET CONFIRM MODAL (already existed; now used) -->
   <div id="resetModal" class="hidden">
     <div class="modal-backdrop" onclick="closeResetModal()">
       <div class="modal" onclick="event.stopPropagation()">
@@ -290,95 +282,8 @@
   </div>
 
   <script>
-    // onboarding slides
-    const slides = [
-      {
-        html: `
-          <h1 style="margin-bottom:10px;">LISTEN UP.</h1>
-          <p style="font-size:13px;opacity:.8;">
-            There are only <strong>two things</strong> you need to understand.
-          </p>
-        `
-      },
-      {
-        html: `
-          <h1 style="margin-bottom:10px;">INCOME</h1>
-          <p style="font-size:13px;opacity:.8;">
-            Income is <strong>money in</strong>.<br><br>
-            You sold a <strong>$5 sandwich today</strong>.<br>
-            Someone paid you <strong>$5 into your bank today</strong>.<br><br>
-            That is <strong>INCOME</strong>.
-          </p>
-        `
-      },
-      {
-        html: `
-          <h1 style="margin-bottom:10px;">DEDUCTION</h1>
-          <p style="font-size:13px;opacity:.8;">
-            A deduction is <strong>money you spent on your business</strong>.<br><br>
-
-            <strong>Example 1:</strong><br>
-            You spent <strong>$3 on bread</strong>, <strong>$2 on peanut butter</strong>,<br>
-            and <strong>$8 on a cool knife</strong> to spread the peanut butter with.<br><br>
-
-            <strong>BOOM.</strong> Those are <strong>DEDUCTIONS</strong>.<br><br>
-
-            <strong>Example 2:</strong><br>
-            You run a <strong>carpentry business</strong>.<br>
-            You buy a <strong>$10 hammer</strong>, <strong>$20 tool belt</strong>, and a <strong>$200 Makita circular saw</strong>.<br><br>
-
-            <strong>BOOM.</strong> All of those are <strong>DEDUCTIONS</strong>.<br><br>
-
-            Now go. Get to it.
-          </p>
-        `
-      }
-    ];
-
-    let currentSlide = 0;
-
-    function showOnboarding() {
-      document.getElementById("onboarding").classList.remove("hidden");
-      renderSlide();
-    }
-
-    function hideOnboarding() {
-      document.getElementById("onboarding").classList.add("hidden");
-      localStorage.setItem("seenOnboarding", "1");
-    }
-
-    function renderSlide() {
-      document.getElementById("slide-content").innerHTML = slides[currentSlide].html;
-    }
-
-    function nextSlide() {
-      currentSlide++;
-      if (currentSlide >= slides.length) {
-        hideOnboarding();
-      } else {
-        renderSlide();
-      }
-    }
-
-    if (!localStorage.getItem("seenOnboarding")) {
-      window.addEventListener("load", showOnboarding);
-    }
-
-    // Help button: open the same "LISTEN UP" slides anytime
-    function openHelp() {
-      currentSlide = 0;
-      showOnboarding();
-    }
-
     const BASE = 18200;
-    const TAX_RATE = 0.30;
-    const MAX_RANGE = 50000;
-    const STORAGE_KEY = "taxTrackerFY";
 
-    // bar caps at $150,000 (starts moving at $18,201)
-    const BAR_CAP = 150000;
-
-    // progressive brackets (marginal rates)
     function calcProgressiveTax(income) {
       const x = Math.max(Number(income) || 0, 0);
       let tax = 0;
@@ -387,7 +292,7 @@
         tax += (Math.min(x, 45000) - BASE) * 0.19;
       }
       if (x > 45000) {
-        tax += (Math.min(x, 120000) - 45000) * 0.325;
+        tax += (Math.min(x, 120000) - 45000) * 0.30; // CHANGED
       }
       if (x > 120000) {
         tax += (Math.min(x, 180000) - 120000) * 0.37;
@@ -403,207 +308,10 @@
       const x = Math.max(Number(income) || 0, 0);
       if (x <= BASE) return "";
       if (x <= 45000) return "19c owing for each $1";
-      if (x <= 120000) return "32.5c owing for each $1";
+      if (x <= 120000) return "30c owing for each $1"; // CHANGED
       if (x <= 180000) return "37c owing for each $1";
       return "47c owing for each $1";
     }
-
-    function getFinancialYear() {
-      const d = new Date();
-      const y = d.getFullYear();
-      return d.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-    }
-
-    let currentFY = getFinancialYear();
-    let store = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-
-    function ensureFY(fy) {
-      if (!store[fy]) store[fy] = { incomes: [], deductions: [] };
-    }
-
-    ensureFY(currentFY);
-
-    let incomes = store[currentFY].incomes;
-    let deductions = store[currentFY].deductions;
-
-    const incomeDisplay = document.getElementById("incomeDisplay");
-    const taxEstimate = document.getElementById("taxEstimate");
-    const barFill = document.getElementById("barFill");
-    const amountInput = document.getElementById("amountInput");
-    const descInput = document.getElementById("descInput");
-    const incomePreview = document.getElementById("incomePreview");
-    const deductionPreview = document.getElementById("deductionPreview");
-    const incomeLog = document.getElementById("incomeLog");
-    const deductionLog = document.getElementById("deductionLog");
-    const rateLabel = document.getElementById("rateLabel");
-
-    function setFYLabel() {
-      document.getElementById("fyText").textContent = `Financial Year: ${currentFY}`;
-    }
-
-    function save() {
-      store[currentFY] = { incomes, deductions };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    }
-
-    function totals() {
-      return {
-        gross: incomes.reduce((a, b) => a + b.amount, 0),
-        ded: deductions.reduce((a, b) => a + b.amount, 0),
-      };
-    }
-
-    function updateUI() {
-      const { gross, ded } = totals();
-
-      // net income after deductions (your existing behavior)
-      const net = gross - ded;
-
-      // show net in the big number (unchanged)
-      incomeDisplay.textContent = `$${(net).toLocaleString()}`;
-
-      // progressive tax based on net income
-      const tax = calcProgressiveTax(net);
-
-      if (net > BASE) {
-        taxEstimate.textContent =
-          tax < 1
-            ? `${Math.round(tax * 100)}c tax owed estimate`
-            : `$${tax.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} tax owed estimate`;
-      } else {
-        taxEstimate.textContent = "";
-      }
-
-      // rate label under estimate (marginal)
-      rateLabel.textContent = marginalRateLabel(net);
-
-      // bar starts at 18,201 and caps (fills) at $150,000
-      const barNumerator = Math.max(net - BASE, 0);
-      const barDenominator = Math.max(BAR_CAP - BASE, 1);
-      barFill.style.width = Math.min((barNumerator / barDenominator) * 100, 100) + "%";
-
-      renderPreviews();
-      renderLogs();
-      save();
-    }
-
-    function renderPreviews() {
-      incomePreview.innerHTML = incomes.slice(-3).reverse().map(renderItem).join("");
-      deductionPreview.innerHTML = deductions.slice(-3).reverse().map(renderItem).join("");
-    }
-
-    function renderLogs() {
-      incomeLog.innerHTML = incomes
-        .map((item, i) => renderItemWithDelete("income")(item, i))
-        .reverse()
-        .join("");
-
-      deductionLog.innerHTML = deductions
-        .map((item, i) => renderItemWithDelete("deduction")(item, i))
-        .reverse()
-        .join("");
-    }
-
-    function renderItem(item) {
-      return `
-        <div class="log-item">
-          <div class="log-top">
-            <span>$${item.amount.toLocaleString()}</span>
-          </div>
-          <div class="desc">${item.desc || "—"}</div>
-        </div>
-      `;
-    }
-
-    function renderItemWithDelete(type) {
-      return (item, i) => `
-        <div class="log-item">
-          <div class="log-top">
-            <span>${type === "income" ? "$" : "-$"}${item.amount.toLocaleString()}</span>
-            <span class="delete" onclick="deleteEntry('${type}', ${i})">✕</span>
-          </div>
-          <div class="desc">${item.desc || "—"}</div>
-        </div>
-      `;
-    }
-
-    function addIncome() {
-      const amount = Number(amountInput.value);
-      if (!amount) return;
-      incomes.push({ amount, desc: descInput.value });
-      clearInputs();
-      updateUI();
-    }
-
-    function addDeduction() {
-      const amount = Number(amountInput.value);
-      if (!amount) return;
-      deductions.push({ amount, desc: descInput.value });
-      clearInputs();
-      updateUI();
-    }
-
-    function deleteEntry(type, index) {
-      type === "income" ? incomes.splice(index, 1) : deductions.splice(index, 1);
-      updateUI();
-    }
-
-    function clearInputs() {
-      amountInput.value = "";
-      descInput.value = "";
-    }
-
-    function toggle(id) {
-      document.querySelectorAll("[id^='screen']").forEach(s => s.classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
-    }
-
-    function showMain() { toggle("screen-main"); }
-    function showIncome() { toggle("screen-income"); }
-    function showDeductions() { toggle("screen-deduction"); }
-
-    function changeFY(direction) {
-      const [start] = currentFY.split("-").map(Number);
-      const now = new Date();
-      const base = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
-
-      const next = start + direction;
-      if (next < base - 3 || next > base + 3) return;
-
-      currentFY = `${next}-${next + 1}`;
-      ensureFY(currentFY);
-
-      incomes = store[currentFY].incomes;
-      deductions = store[currentFY].deductions;
-
-      setFYLabel();
-      updateUI();
-    }
-
-    function openResetModal() {
-      document.getElementById("resetText").textContent =
-        `Are you sure you want to reset ${currentFY}?`;
-      document.getElementById("resetModal").classList.remove("hidden");
-    }
-
-    function closeResetModal() {
-      document.getElementById("resetModal").classList.add("hidden");
-    }
-
-    function doResetFY() {
-      incomes.length = 0;
-      deductions.length = 0;
-      updateUI();
-      closeResetModal();
-
-      // NOTE: Removed the onboarding "LISTEN UP" popup on reset (only change).
-    }
-
-    setFYLabel();
-    updateUI();
   </script>
 </body>
 </html>
