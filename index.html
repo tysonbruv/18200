@@ -2,400 +2,701 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tax Owing Tracker</title>
-
   <style>
     :root {
       --bg: #0e0e0e;
       --panel: #161616;
-      --panel-dark: #111;
-      --border: #2a2a2a;
+      --input: #0f0f0f;
+      --border: #333333;
+      --border-soft: #2a2a2a;
       --text: #f5f5f5;
       --muted: #9a9a9a;
-      --accent: linear-gradient(90deg, #ff5f57, #ffb347);
+      --muted2: #7a7a7a;
+      --accent: #ff5f57;
+      --accent2: #ffb347;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     body {
       margin: 0;
-      height: 100vh;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 16px;
     }
 
-    .app {
-      width: 420px;
-      background: var(--panel);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 0 40px rgba(0,0,0,0.6);
-      max-height: 90vh;
+    .screen {
+      width: min(100%, 760px);
+      height: min(96vh, 480px);
       overflow-y: auto;
+      background: var(--panel);
+      border: 1px solid var(--border-soft);
+      border-radius: 16px;
+      padding: 18px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(119,119,119,.35) transparent;
+    }
+
+    .screen::-webkit-scrollbar { width: 5px; }
+    .screen::-webkit-scrollbar-thumb {
+      background: rgba(119,119,119,.35);
+      border-radius: 999px;
+    }
+
+    .top-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-top: 18px;
     }
 
     h1 {
+      margin: 0;
       font-size: 18px;
-      margin: 0 0 10px 0;
-      font-weight: 600;
+      font-weight: 700;
     }
 
-    .fy-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
     }
 
-    .fy-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      opacity: 0.8;
+    .fy-label {
+      min-width: 292px;
+      color: var(--text);
+      font-size: 15px;
     }
 
-    .numbers {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 10px;
+    button, input {
+      font: inherit;
+    }
+
+    .small-btn,
+    .main-btn,
+    .date-btn {
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      height: 34px;
+    }
+
+    .small-btn {
+      padding: 5px 10px;
+      min-width: 53px;
+    }
+
+    .reset-btn { width: 137px; }
+    .help-btn { width: 53px; }
+
+    .money-area {
+      position: relative;
+      min-height: 124px;
+      margin-top: 10px;
     }
 
     .threshold {
-      font-size: 13px;
-      opacity: 0.7;
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--muted);
+      font-size: 15px;
     }
 
-    .totals {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 2px;
+    .tax-info {
+      position: absolute;
+      right: 0;
+      top: -6px;
+      width: 334px;
+      text-align: right;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 15px;
     }
 
-    #incomeDisplay { font-size: 15px; }
-    #taxEstimate { font-size: 11px; color: var(--muted); }
-
-    /* rate label under tax estimate */
-    #rateLabel {
-      font-size: 11px;
-      color: #7a7a7a;
-      opacity: 0.8;
+    .rate {
+      color: var(--muted2);
     }
 
-    .bar-container {
-      height: 10px;
-      background: var(--border);
+    .total {
+      position: absolute;
+      top: 46px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 74px;
+      height: 14px;
+      background: #2a2a2a;
       border-radius: 999px;
       overflow: hidden;
-      margin-bottom: 18px;
     }
 
     .bar-fill {
       height: 100%;
       width: 0%;
-      background: var(--accent);
-      transition: width 0.25s ease;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 999px;
+      transition: width .18s ease;
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .goal {
+      position: absolute;
+      left: 0;
+      top: 100px;
+      color: var(--muted2);
+      font-size: 15px;
+    }
+
+    .entry-area {
+      width: 438px;
+      margin: 20px auto 0;
+    }
+
+    .entry-input {
+      width: 100%;
+      height: 46px;
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px;
+      outline: none;
+    }
+
+    .entry-input::placeholder {
+      color: #777;
+    }
+
+    .desc-date-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    #descInput {
+      width: 316px;
+    }
+
+    .date-btn {
+      width: 110px;
+      height: 46px;
+    }
+
+    .button-row {
+      width: 584px;
+      margin: 12px auto 0;
+      display: flex;
+      gap: 20px;
+    }
+
+    .main-btn {
+      height: 46px;
+      font-weight: 600;
+    }
+
+    .income-btn { width: 278px; }
+    .deduction-btn { width: 286px; }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 56px;
+    }
+
+    .section-head.deductions {
+      margin-top: 16px;
+    }
+
+    .view-btn {
+      width: 110px;
+      height: 34px;
+    }
+
+    .preview-list {
+      display: flex;
+      flex-direction: column;
       gap: 8px;
+      margin-top: 10px;
+      min-height: 216px;
+    }
+
+    .card {
+      background: #111111;
+      border-radius: 6px;
+      padding: 10px;
+      min-height: 64px;
+    }
+
+    .card .amount {
+      font-weight: 700;
       margin-bottom: 16px;
     }
 
-    input, button {
-      background: #0f0f0f;
-      border: 1px solid #333;
-      color: var(--text);
-      padding: 8px;
-      border-radius: 6px;
-      font-size: 13px;
+    .card .desc {
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
-    button { cursor: pointer; }
-    button:hover { background: #222; }
-
-    .section { margin-bottom: 14px; }
-
-    .section h2 {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      margin: 0 0 6px 0;
-      opacity: 0.7;
-    }
-
-    .log-item {
-      background: var(--panel-dark);
-      padding: 6px 8px;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      font-size: 13px;
-    }
+    .log-screen { display: none; }
 
     .log-top {
       display: flex;
+      align-items: center;
       justify-content: space-between;
     }
 
-    .desc {
-      font-size: 12px;
-      opacity: 0.6;
-      margin-top: 2px;
+    .log-title-area {
+      margin-top: 18px;
     }
 
-    .delete {
-      color: #ff5f57;
+    .tip {
+      margin-top: 8px;
+      color: #bdbdbd;
+      font-size: 15px;
+    }
+
+    .count {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .log-nav {
+      display: flex;
+      gap: 34px;
+      margin-top: 42px;
+    }
+
+    .log-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 18px;
+    }
+
+    .log-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 30px;
+      align-items: center;
+      height: 34px;
+      background: #111111;
+      border: 1px solid #222222;
+      padding: 0 8px;
+      color: var(--text);
+    }
+
+    .log-row .log-desc {
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .delete-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent);
       cursor: pointer;
-      font-size: 12px;
+      font-size: 18px;
+      height: 28px;
     }
 
-    .nav { margin-bottom: 12px; }
-    .hidden { display: none !important; }
+    .empty {
+      color: var(--muted);
+      margin-top: 8px;
+    }
 
     .modal-backdrop {
+      display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
-      display: flex;
+      background: rgba(0,0,0,.7);
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      padding: 16px;
+      z-index: 100;
     }
 
     .modal {
       background: var(--panel);
-      padding: 20px;
+      border: 1px solid var(--border-soft);
       border-radius: 12px;
-      width: 300px;
+      padding: 18px;
+      color: var(--text);
+      width: min(100%, 570px);
+      max-height: 92vh;
+      overflow-y: auto;
     }
 
-    /* HELP BUTTON (question mark in a square) */
-    .help-btn {
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 6px;
-      font-weight: 700;
-      font-size: 14px;
-      line-height: 1;
-      opacity: 0.85;
+    .date-picker-grid {
+      display: grid;
+      grid-template-columns: 188px 1fr;
+      gap: 26px;
+      margin-top: 16px;
     }
-    .help-btn:hover { opacity: 1; }
+
+    .picker-label {
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 58px);
+      gap: 6px;
+    }
+
+    .day-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 42px);
+      gap: 5px;
+    }
+
+    .choice-btn {
+      height: 34px;
+      background: var(--input);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .day-grid .choice-btn {
+      height: 32px;
+    }
+
+    .choice-btn.selected {
+      background: #2f2f2f;
+      border: 2px solid #f5f5f5;
+      color: white;
+    }
+
+    .choice-btn.disabled {
+      opacity: .3;
+      pointer-events: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .danger {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .help-text {
+      white-space: pre-wrap;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    @media (max-width: 680px) {
+      body {
+        align-items: flex-start;
+        padding: 8px;
+      }
+
+      .screen {
+        height: auto;
+        min-height: 100vh;
+        border-radius: 0;
+      }
+
+      .top-row {
+        flex-wrap: wrap;
+      }
+
+      .fy-label {
+        min-width: 200px;
+      }
+
+      .tax-info {
+        position: static;
+        text-align: left;
+        width: auto;
+        padding-top: 26px;
+      }
+
+      .money-area {
+        min-height: 160px;
+      }
+
+      .total {
+        top: 68px;
+      }
+
+      .bar {
+        top: 100px;
+      }
+
+      .goal {
+        top: 126px;
+      }
+
+      .entry-area,
+      .button-row {
+        width: 100%;
+      }
+
+      #descInput {
+        width: calc(100% - 122px);
+      }
+
+      .button-row {
+        gap: 12px;
+      }
+
+      .income-btn,
+      .deduction-btn {
+        width: 50%;
+      }
+
+      .date-picker-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .day-grid {
+        grid-template-columns: repeat(7, minmax(34px, 1fr));
+      }
+
+      .month-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
   </style>
 </head>
-
 <body>
-  <!-- ONBOARDING OVERLAY -->
-  <div id="onboarding" class="modal-backdrop hidden">
-    <div class="modal" style="width:320px;">
-      <div id="slide-content"></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-        <button onclick="nextSlide()">Continue</button>
+  <main id="mainScreen" class="screen">
+    <h1>Tax Owing Tracker</h1>
+
+    <div class="top-row">
+      <button class="small-btn" id="prevFY">&lt;</button>
+      <div class="fy-label" id="fyLabel">Financial Year: 2025-2026</div>
+      <button class="small-btn" id="nextFY">&gt;</button>
+      <button class="small-btn reset-btn" id="resetBtn">Reset FY</button>
+      <button class="small-btn help-btn" id="helpBtn">?</button>
+    </div>
+
+    <section class="money-area">
+      <div class="threshold">$18,200</div>
+      <div class="tax-info">
+        <div id="taxEstimate"></div>
+        <div id="rateLabel" class="rate"></div>
+      </div>
+      <div class="total" id="incomeDisplay">$0</div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+      <div class="goal">The goal is to bring this back to $18,200.</div>
+    </section>
+
+    <section class="entry-area">
+      <input id="amountInput" class="entry-input" type="number" min="0" step="0.01" placeholder="Amount $" />
+      <div class="desc-date-row">
+        <input id="descInput" class="entry-input" type="text" maxlength="42" placeholder="Description" />
+        <button id="dateBtn" class="date-btn">Date</button>
+      </div>
+    </section>
+
+    <section class="button-row">
+      <button class="main-btn income-btn" id="addIncome">Add Income</button>
+      <button class="main-btn deduction-btn" id="addDeduction">Add Deduction</button>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Income</h2>
+        <button class="small-btn view-btn" id="viewIncome">View all</button>
+      </div>
+      <div id="incomePreview" class="preview-list"></div>
+    </section>
+
+    <section>
+      <div class="section-head deductions">
+        <h2>Deductions</h2>
+        <button class="small-btn view-btn" id="viewDeductions">View all</button>
+      </div>
+      <div id="deductionPreview" class="preview-list"></div>
+    </section>
+  </main>
+
+  <section id="incomeScreen" class="screen log-screen">
+    <div class="log-top">
+      <button class="small-btn" id="incomeBack">&lt; Back</button>
+      <div class="log-nav">
+        <button class="small-btn view-btn" id="incomeNewer">Newer</button>
+        <button class="small-btn view-btn" id="incomeOlder">Older</button>
+      </div>
+    </div>
+    <div class="log-title-area">
+      <h2>Income Log</h2>
+      <div class="tip">Enter your daily total after work</div>
+      <div class="count" id="incomeCount">0 / 365 entries stored</div>
+    </div>
+    <div id="incomeLog" class="log-list"></div>
+  </section>
+
+  <section id="deductionScreen" class="screen log-screen">
+    <div class="log-top">
+      <button class="small-btn" id="deductionBack">&lt; Back</button>
+      <div class="log-nav">
+        <button class="small-btn view-btn" id="deductionNewer">Newer</button>
+        <button class="small-btn view-btn" id="deductionOlder">Older</button>
+      </div>
+    </div>
+    <div class="log-title-area">
+      <h2>Deduction Log</h2>
+      <div class="tip">Enter your daily total after work</div>
+      <div class="count" id="deductionCount">0 / 365 entries stored</div>
+    </div>
+    <div id="deductionLog" class="log-list"></div>
+  </section>
+
+  <div class="modal-backdrop" id="dateModal">
+    <div class="modal">
+      <h2>Select date</h2>
+      <div class="date-picker-grid">
+        <div>
+          <div class="picker-label">Month</div>
+          <div class="month-grid" id="monthGrid"></div>
+        </div>
+        <div>
+          <div class="picker-label">Day</div>
+          <div class="day-grid" id="dayGrid"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="small-btn" id="dateClear">Clear</button>
+        <button class="small-btn" id="dateCancel">Cancel</button>
+        <button class="small-btn" id="dateDone">Done</button>
       </div>
     </div>
   </div>
 
-  <div class="app">
-    <div id="screen-main">
-      <h1>Tax Owing Tracker</h1>
-
-      <div class="fy-row">
-        <div class="fy-controls">
-          <button onclick="changeFY(-1)">←</button>
-          <span id="fyText"></span>
-          <button onclick="changeFY(1)">→</button>
-        </div>
-
-        <!-- RIGHT SIDE: reset + help -->
-        <div style="display:flex;align-items:center;gap:8px;">
-          <!-- CHANGED: reset now opens confirm modal -->
-          <button onclick="openResetModal()" style="font-size:11px;opacity:.6">Reset FY</button>
-
-          <!-- Question mark in a square to open the "LISTEN UP" slides -->
-          <button class="help-btn" onclick="openHelp()">?</button>
-        </div>
+  <div class="modal-backdrop" id="helpModal">
+    <div class="modal">
+      <div id="helpText" class="help-text"></div>
+      <div class="modal-actions">
+        <button class="small-btn" id="helpContinue">Continue</button>
       </div>
-
-      <div class="numbers">
-        <div class="threshold">$18,200</div>
-        <div class="totals">
-          <div id="incomeDisplay">$0</div>
-          <div id="taxEstimate"></div>
-          <div id="rateLabel"></div>
-        </div>
-      </div>
-
-      <div class="bar-container">
-        <div class="bar-fill" id="barFill"></div>
-      </div>
-
-      <div style="font-size:11px;color:#7a7a7a;opacity:0.8;margin:-10px 0 14px 0;">
-        The goal is to bring this back to $18,200.
-      </div>
-
-      <div class="controls">
-        <input id="amountInput" type="number" placeholder="Amount $" />
-        <input id="descInput" type="text" placeholder="Description" />
-        <button onclick="addIncome()">Add Income</button>
-        <button onclick="addDeduction()">Add Deduction</button>
-      </div>
-
-      <div class="section">
-        <h2>Income <button onclick="showIncome()">View all</button></h2>
-        <div id="incomePreview"></div>
-      </div>
-
-      <div class="section">
-        <h2>Deductions <button onclick="showDeductions()">View all</button></h2>
-        <div id="deductionPreview"></div>
-      </div>
-    </div>
-
-    <div id="screen-income" class="hidden">
-      <div class="nav"><button onclick="showMain()">← Back</button></div>
-      <h1>Income Log</h1>
-      <div id="incomeLog"></div>
-    </div>
-
-    <div id="screen-deduction" class="hidden">
-      <div class="nav"><button onclick="showMain()">← Back</button></div>
-      <h1>Deduction Log</h1>
-      <div id="deductionLog"></div>
     </div>
   </div>
 
-  <!-- RESET CONFIRM MODAL (already existed; now used) -->
-  <div id="resetModal" class="hidden">
-    <div class="modal-backdrop" onclick="closeResetModal()">
-      <div class="modal" onclick="event.stopPropagation()">
-        <div id="resetText" style="margin-bottom:16px;font-size:13px;opacity:.9"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end">
-          <button onclick="closeResetModal()">No</button>
-          <button onclick="doResetFY()" style="background:#ff5f57;border-color:#ff5f57;color:#fff;">Yes</button>
-        </div>
+  <div class="modal-backdrop" id="resetModal">
+    <div class="modal" style="max-width:340px">
+      <div id="resetText" class="help-text"></div>
+      <div class="modal-actions">
+        <button class="small-btn" id="resetNo">No</button>
+        <button class="small-btn danger" id="resetYes">Yes</button>
       </div>
     </div>
   </div>
 
   <script>
-    // onboarding slides
+    const BASE = 18200;
+    const BAR_CAP = 150000;
+    const MAX_ENTRIES = 365;
+    const LOG_PAGE_SIZE = 50;
+
     const slides = [
-      {
-        html: `
-          <h1 style="margin-bottom:10px;">LISTEN UP.</h1>
-          <p style="font-size:13px;opacity:.8;">
-            There are only <strong>two things</strong> you need to understand.
-          </p>
-        `
-      },
-      {
-        html: `
-          <h1 style="margin-bottom:10px;">INCOME</h1>
-          <p style="font-size:13px;opacity:.8;">
-            Income is <strong>money in</strong>.<br><br>
-            You sold a <strong>$5 sandwich today</strong>.<br>
-            Someone paid you <strong>$5 into your bank today</strong>.<br><br>
-            That is <strong>INCOME</strong>.
-          </p>
-        `
-      },
-      {
-        html: `
-          <h1 style="margin-bottom:10px;">DEDUCTION</h1>
-          <p style="font-size:13px;opacity:.8;">
-            A deduction is <strong>money you spent on your business</strong>.<br><br>
-
-            <strong>Example 1:</strong><br>
-            You spent <strong>$3 on bread</strong>, <strong>$2 on peanut butter</strong>,<br>
-            and <strong>$8 on a cool knife</strong> to spread the peanut butter with.<br><br>
-
-            <strong>BOOM.</strong> Those are <strong>DEDUCTIONS</strong>.<br><br>
-
-            <strong>Example 2:</strong><br>
-            You run a <strong>carpentry business</strong>.<br>
-            You buy a <strong>$10 hammer</strong>, <strong>$20 tool belt</strong>, and a <strong>$200 Makita circular saw</strong>.<br><br>
-
-            <strong>BOOM.</strong> All of those are <strong>DEDUCTIONS</strong>.<br><br>
-
-            Now go. Get to it.
-          </p>
-        `
-      }
+      "LISTEN UP.\n\nThere are only two things you need to understand.",
+      "INCOME\n\nIncome is money in.\n\nYou sold a $5 sandwich today.\nSomeone paid you $5 into your bank today.\n\nThat is INCOME.",
+      "DEDUCTION\n\nA deduction is money you spent on your business.\n\nExample: $3 bread, $2 peanut butter, and an $8 knife to spread it.\n\nBOOM. Those are DEDUCTIONS.\n\nNow go. Get to it."
     ];
 
-    let currentSlide = 0;
+    let incomes = [];
+    let deductions = [];
+    let incomeLogPage = 0;
+    let deductionLogPage = 0;
+    let selectedMonth = 0;
+    let selectedDay = 0;
+    let pickerMonth = 0;
+    let pickerDay = 0;
+    let helpSlide = 0;
 
-    function showOnboarding() {
-      document.getElementById("onboarding").classList.remove("hidden");
-      renderSlide();
+    const now = new Date();
+    const baseFYStart = now.getMonth() + 1 >= 7 ? now.getFullYear() : now.getFullYear() - 1;
+    let currentFYStart = Number(localStorage.getItem("taxTracker.currentFY")) || baseFYStart;
+
+    function fyText() {
+      return `${currentFYStart}-${currentFYStart + 1}`;
     }
 
-    function hideOnboarding() {
-      document.getElementById("onboarding").classList.add("hidden");
-      localStorage.setItem("seenOnboarding", "1");
+    function key(prefix) {
+      return `taxTracker.${prefix}${currentFYStart}`;
     }
 
-    function renderSlide() {
-      document.getElementById("slide-content").innerHTML = slides[currentSlide].html;
+    function cleanDesc(s) {
+      return String(s || "").replace(/[\t\n\r]/g, " ").trim().slice(0, 42);
     }
 
-    function nextSlide() {
-      currentSlide++;
-      if (currentSlide >= slides.length) {
-        hideOnboarding();
-      } else {
-        renderSlide();
-      }
+    function monthShortName(m) {
+      return ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][m] || "";
     }
 
-    if (!localStorage.getItem("seenOnboarding")) {
-      window.addEventListener("load", showOnboarding);
+    function daysInMonth(m) {
+      if (m === 2) return 29;
+      if ([4, 6, 9, 11].includes(m)) return 30;
+      return 31;
     }
 
-    // Help button: open the same "LISTEN UP" slides anytime
-    function openHelp() {
-      currentSlide = 0;
-      showOnboarding();
+    function selectedDateText() {
+      if (!selectedMonth || !selectedDay) return "";
+      return `${selectedDay} ${monthShortName(selectedMonth)}`;
     }
 
-    const BASE = 18200;
-    const TAX_RATE = 0.30;
-    const MAX_RANGE = 50000;
-    const STORAGE_KEY = "taxTrackerFY";
+    function buildSavedDescWithDate(desc) {
+      desc = cleanDesc(desc);
+      const dt = selectedDateText();
+      if (!dt) return desc;
+      if (!desc) return dt;
+      return cleanDesc(`${dt} - ${desc}`);
+    }
 
-    // bar caps at $150,000 (starts moving at $18,201)
-    const BAR_CAP = 150000;
+    function money(value, cents = false) {
+      const n = Number(value) || 0;
+      const abs = Math.abs(n);
+      const formatted = abs.toLocaleString("en-AU", {
+        minimumFractionDigits: cents ? 2 : 0,
+        maximumFractionDigits: cents ? 2 : 0
+      });
+      return `${n < 0 ? "-$" : "$"}${formatted}`;
+    }
 
-    // progressive brackets (marginal rates)
     function calcProgressiveTax(income) {
       const x = Math.max(Number(income) || 0, 0);
       let tax = 0;
-
-      if (x > BASE) {
-        tax += (Math.min(x, 45000) - BASE) * 0.19;
-      }
-      if (x > 45000) {
-        tax += (Math.min(x, 120000) - 45000) * 0.325;
-      }
-      if (x > 120000) {
-        tax += (Math.min(x, 180000) - 120000) * 0.37;
-      }
-      if (x > 180000) {
-        tax += (x - 180000) * 0.47;
-      }
-
+      if (x > BASE) tax += (Math.min(x, 45000) - BASE) * 0.19;
+      if (x > 45000) tax += (Math.min(x, 120000) - 45000) * 0.325;
+      if (x > 120000) tax += (Math.min(x, 180000) - 120000) * 0.37;
+      if (x > 180000) tax += (x - 180000) * 0.47;
       return tax;
     }
 
@@ -408,202 +709,326 @@
       return "47c owing for each $1";
     }
 
-    function getFinancialYear() {
-      const d = new Date();
-      const y = d.getFullYear();
-      return d.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+    function totalOf(list) {
+      return list.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
     }
 
-    let currentFY = getFinancialYear();
-    let store = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-
-    function ensureFY(fy) {
-      if (!store[fy]) store[fy] = { incomes: [], deductions: [] };
+    function saveCurrentFY() {
+      localStorage.setItem(key("i"), JSON.stringify(incomes));
+      localStorage.setItem(key("d"), JSON.stringify(deductions));
+      localStorage.setItem("taxTracker.currentFY", String(currentFYStart));
     }
 
-    ensureFY(currentFY);
-
-    let incomes = store[currentFY].incomes;
-    let deductions = store[currentFY].deductions;
-
-    const incomeDisplay = document.getElementById("incomeDisplay");
-    const taxEstimate = document.getElementById("taxEstimate");
-    const barFill = document.getElementById("barFill");
-    const amountInput = document.getElementById("amountInput");
-    const descInput = document.getElementById("descInput");
-    const incomePreview = document.getElementById("incomePreview");
-    const deductionPreview = document.getElementById("deductionPreview");
-    const incomeLog = document.getElementById("incomeLog");
-    const deductionLog = document.getElementById("deductionLog");
-    const rateLabel = document.getElementById("rateLabel");
-
-    function setFYLabel() {
-      document.getElementById("fyText").textContent = `Financial Year: ${currentFY}`;
-    }
-
-    function save() {
-      store[currentFY] = { incomes, deductions };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    }
-
-    function totals() {
-      return {
-        gross: incomes.reduce((a, b) => a + b.amount, 0),
-        ded: deductions.reduce((a, b) => a + b.amount, 0),
-      };
-    }
-
-    function updateUI() {
-      const { gross, ded } = totals();
-
-      // net income after deductions (your existing behavior)
-      const net = gross - ded;
-
-      // show net in the big number (unchanged)
-      incomeDisplay.textContent = `$${(net).toLocaleString()}`;
-
-      // progressive tax based on net income
-      const tax = calcProgressiveTax(net);
-
-      if (net > BASE) {
-        taxEstimate.textContent =
-          tax < 1
-            ? `${Math.round(tax * 100)}c tax owed estimate`
-            : `$${tax.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })} tax owed estimate`;
-      } else {
-        taxEstimate.textContent = "";
+    function loadCurrentFY() {
+      try {
+        incomes = JSON.parse(localStorage.getItem(key("i")) || "[]");
+        deductions = JSON.parse(localStorage.getItem(key("d")) || "[]");
+      } catch {
+        incomes = [];
+        deductions = [];
       }
+    }
 
-      // rate label under estimate (marginal)
-      rateLabel.textContent = marginalRateLabel(net);
+    function addEntry(isIncome) {
+      const amount = Number(document.getElementById("amountInput").value);
+      if (!amount || amount <= 0) return;
 
-      // bar starts at 18,201 and caps (fills) at $150,000
-      const barNumerator = Math.max(net - BASE, 0);
-      const barDenominator = Math.max(BAR_CAP - BASE, 1);
-      barFill.style.width = Math.min((barNumerator / barDenominator) * 100, 100) + "%";
+      const entry = {
+        amount,
+        desc: buildSavedDescWithDate(document.getElementById("descInput").value)
+      };
 
-      renderPreviews();
-      renderLogs();
-      save();
+      const target = isIncome ? incomes : deductions;
+      if (target.length >= MAX_ENTRIES) target.shift();
+      target.push(entry);
+
+      if (isIncome) incomeLogPage = 0;
+      else deductionLogPage = 0;
+
+      document.getElementById("amountInput").value = "";
+      document.getElementById("descInput").value = "";
+      selectedMonth = 0;
+      selectedDay = 0;
+      renderDateButton();
+      updateUI();
+    }
+
+    function renderDateButton() {
+      document.getElementById("dateBtn").textContent = selectedDateText() || "Date";
     }
 
     function renderPreviews() {
-      incomePreview.innerHTML = incomes.slice(-3).reverse().map(renderItem).join("");
-      deductionPreview.innerHTML = deductions.slice(-3).reverse().map(renderItem).join("");
+      renderPreview("incomePreview", incomes, false);
+      renderPreview("deductionPreview", deductions, true);
     }
 
-    function renderLogs() {
-      incomeLog.innerHTML = incomes
-        .map((item, i) => renderItemWithDelete("income")(item, i))
-        .reverse()
-        .join("");
+    function renderPreview(id, list, deduction) {
+      const el = document.getElementById(id);
+      el.innerHTML = "";
 
-      deductionLog.innerHTML = deductions
-        .map((item, i) => renderItemWithDelete("deduction")(item, i))
-        .reverse()
-        .join("");
+      const latest = list.slice(-3).reverse();
+      if (!latest.length) {
+        el.innerHTML = `<div class="empty">${deduction ? "No deductions added yet." : "No income added yet."}</div>`;
+        return;
+      }
+
+      latest.forEach(entry => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="amount">${deduction ? "-" : ""}${money(entry.amount, false)}</div>
+          <div class="desc">${entry.desc || "-"}</div>
+        `;
+        el.appendChild(card);
+      });
     }
 
-    function renderItem(item) {
-      return `
-        <div class="log-item">
-          <div class="log-top">
-            <span>$${item.amount.toLocaleString()}</span>
-          </div>
-          <div class="desc">${item.desc || "—"}</div>
-        </div>
-      `;
+    function maxPageForCount(count) {
+      if (count <= 0) return 0;
+      return Math.floor((count - 1) / LOG_PAGE_SIZE);
     }
 
-    function renderItemWithDelete(type) {
-      return (item, i) => `
-        <div class="log-item">
-          <div class="log-top">
-            <span>${type === "income" ? "$" : "-$"}${item.amount.toLocaleString()}</span>
-            <span class="delete" onclick="deleteEntry('${type}', ${i})">✕</span>
-          </div>
-          <div class="desc">${item.desc || "—"}</div>
-        </div>
-      `;
+    function clampLogPages() {
+      incomeLogPage = Math.max(0, Math.min(incomeLogPage, maxPageForCount(incomes.length)));
+      deductionLogPage = Math.max(0, Math.min(deductionLogPage, maxPageForCount(deductions.length)));
     }
 
-    function addIncome() {
-      const amount = Number(amountInput.value);
-      if (!amount) return;
-      incomes.push({ amount, desc: descInput.value });
-      clearInputs();
+    function renderFullList(type) {
+      clampLogPages();
+
+      const isDeduction = type === "deduction";
+      const list = isDeduction ? deductions : incomes;
+      const page = isDeduction ? deductionLogPage : incomeLogPage;
+      const log = document.getElementById(isDeduction ? "deductionLog" : "incomeLog");
+      const count = document.getElementById(isDeduction ? "deductionCount" : "incomeCount");
+
+      count.textContent = `${list.length} / ${MAX_ENTRIES} entries stored`;
+      log.innerHTML = "";
+
+      if (!list.length) {
+        log.innerHTML = `<div class="empty">${isDeduction ? "No deductions added yet." : "No income added yet."}</div>`;
+        return;
+      }
+
+      const startNewest = page * LOG_PAGE_SIZE;
+      const endNewest = Math.min(startNewest + LOG_PAGE_SIZE, list.length);
+
+      for (let newestPos = startNewest; newestPos < endNewest; newestPos++) {
+        const realIndex = list.length - 1 - newestPos;
+        const entry = list[realIndex];
+
+        const row = document.createElement("div");
+        row.className = "log-row";
+        row.innerHTML = `
+          <div>${isDeduction ? "-" : ""}${money(entry.amount, false)}</div>
+          <div class="log-desc">${entry.desc || "-"}</div>
+          <button class="delete-btn" title="Delete">x</button>
+        `;
+
+        row.querySelector("button").addEventListener("click", () => {
+          list.splice(realIndex, 1);
+          clampLogPages();
+          updateUI();
+          renderFullList(type);
+        });
+
+        log.appendChild(row);
+      }
+    }
+
+    function updateUI() {
+      const gross = totalOf(incomes);
+      const ded = totalOf(deductions);
+      const net = gross - ded;
+      const tax = calcProgressiveTax(net);
+
+      document.getElementById("fyLabel").textContent = `Financial Year: ${fyText()}`;
+      document.getElementById("incomeDisplay").textContent = money(net, false);
+      document.getElementById("taxEstimate").textContent = net > BASE ? `${money(tax, true)} tax owed estimate` : "";
+      document.getElementById("rateLabel").textContent = marginalRateLabel(net);
+
+      let pct = (net - BASE) / (BAR_CAP - BASE);
+      pct = Math.max(0, Math.min(1, pct));
+      document.getElementById("barFill").style.width = `${pct * 100}%`;
+
+      renderPreviews();
+      saveCurrentFY();
+    }
+
+    function showScreen(name) {
+      document.getElementById("mainScreen").style.display = name === "main" ? "block" : "none";
+      document.getElementById("incomeScreen").style.display = name === "income" ? "block" : "none";
+      document.getElementById("deductionScreen").style.display = name === "deduction" ? "block" : "none";
+    }
+
+    function openDatePicker() {
+      pickerMonth = selectedMonth || (new Date().getMonth() + 1);
+      pickerDay = selectedDay || new Date().getDate();
+      buildDatePicker();
+      document.getElementById("dateModal").style.display = "flex";
+    }
+
+    function closeDatePicker() {
+      document.getElementById("dateModal").style.display = "none";
+    }
+
+    function buildDatePicker() {
+      const monthGrid = document.getElementById("monthGrid");
+      const dayGrid = document.getElementById("dayGrid");
+
+      monthGrid.innerHTML = "";
+      dayGrid.innerHTML = "";
+
+      for (let m = 1; m <= 12; m++) {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = monthShortName(m);
+        btn.addEventListener("click", () => {
+          pickerMonth = m;
+          if (pickerDay > daysInMonth(pickerMonth)) pickerDay = daysInMonth(pickerMonth);
+          buildDatePicker();
+        });
+        if (m === pickerMonth) btn.classList.add("selected");
+        monthGrid.appendChild(btn);
+      }
+
+      const maxDay = daysInMonth(pickerMonth);
+
+      for (let d = 1; d <= 31; d++) {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = d;
+        if (d === pickerDay && d <= maxDay) btn.classList.add("selected");
+        if (d > maxDay) btn.classList.add("disabled");
+        btn.addEventListener("click", () => {
+          pickerDay = d;
+          buildDatePicker();
+        });
+        dayGrid.appendChild(btn);
+      }
+    }
+
+    function openHelp() {
+      helpSlide = 0;
+      renderHelp();
+      document.getElementById("helpModal").style.display = "flex";
+    }
+
+    function renderHelp() {
+      document.getElementById("helpText").textContent = slides[helpSlide];
+      document.getElementById("helpContinue").textContent = helpSlide === slides.length - 1 ? "Done" : "Continue";
+    }
+
+    document.getElementById("prevFY").addEventListener("click", () => {
+      const next = currentFYStart - 1;
+      if (next < baseFYStart - 3) return;
+      saveCurrentFY();
+      currentFYStart = next;
+      incomeLogPage = 0;
+      deductionLogPage = 0;
+      loadCurrentFY();
       updateUI();
-    }
+    });
 
-    function addDeduction() {
-      const amount = Number(amountInput.value);
-      if (!amount) return;
-      deductions.push({ amount, desc: descInput.value });
-      clearInputs();
+    document.getElementById("nextFY").addEventListener("click", () => {
+      const next = currentFYStart + 1;
+      if (next > baseFYStart + 3) return;
+      saveCurrentFY();
+      currentFYStart = next;
+      incomeLogPage = 0;
+      deductionLogPage = 0;
+      loadCurrentFY();
       updateUI();
-    }
+    });
 
-    function deleteEntry(type, index) {
-      type === "income" ? incomes.splice(index, 1) : deductions.splice(index, 1);
+    document.getElementById("addIncome").addEventListener("click", () => addEntry(true));
+    document.getElementById("addDeduction").addEventListener("click", () => addEntry(false));
+
+    document.getElementById("viewIncome").addEventListener("click", () => {
+      incomeLogPage = 0;
+      renderFullList("income");
+      showScreen("income");
+    });
+
+    document.getElementById("viewDeductions").addEventListener("click", () => {
+      deductionLogPage = 0;
+      renderFullList("deduction");
+      showScreen("deduction");
+    });
+
+    document.getElementById("incomeBack").addEventListener("click", () => showScreen("main"));
+    document.getElementById("deductionBack").addEventListener("click", () => showScreen("main"));
+
+    document.getElementById("incomeOlder").addEventListener("click", () => {
+      if (incomeLogPage < maxPageForCount(incomes.length)) incomeLogPage++;
+      renderFullList("income");
+    });
+
+    document.getElementById("incomeNewer").addEventListener("click", () => {
+      if (incomeLogPage > 0) incomeLogPage--;
+      renderFullList("income");
+    });
+
+    document.getElementById("deductionOlder").addEventListener("click", () => {
+      if (deductionLogPage < maxPageForCount(deductions.length)) deductionLogPage++;
+      renderFullList("deduction");
+    });
+
+    document.getElementById("deductionNewer").addEventListener("click", () => {
+      if (deductionLogPage > 0) deductionLogPage--;
+      renderFullList("deduction");
+    });
+
+    document.getElementById("dateBtn").addEventListener("click", openDatePicker);
+    document.getElementById("dateCancel").addEventListener("click", closeDatePicker);
+    document.getElementById("dateClear").addEventListener("click", () => {
+      selectedMonth = 0;
+      selectedDay = 0;
+      renderDateButton();
+      closeDatePicker();
+    });
+    document.getElementById("dateDone").addEventListener("click", () => {
+      selectedMonth = pickerMonth;
+      selectedDay = Math.min(pickerDay, daysInMonth(pickerMonth));
+      renderDateButton();
+      closeDatePicker();
+    });
+
+    document.getElementById("helpBtn").addEventListener("click", openHelp);
+    document.getElementById("helpContinue").addEventListener("click", () => {
+      helpSlide++;
+      if (helpSlide >= slides.length) {
+        localStorage.setItem("taxTracker.seen", "true");
+        document.getElementById("helpModal").style.display = "none";
+      } else {
+        renderHelp();
+      }
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      document.getElementById("resetText").textContent = `Are you sure you want to reset ${fyText()}?`;
+      document.getElementById("resetModal").style.display = "flex";
+    });
+
+    document.getElementById("resetNo").addEventListener("click", () => {
+      document.getElementById("resetModal").style.display = "none";
+    });
+
+    document.getElementById("resetYes").addEventListener("click", () => {
+      incomes = [];
+      deductions = [];
+      saveCurrentFY();
       updateUI();
-    }
+      document.getElementById("resetModal").style.display = "none";
+    });
 
-    function clearInputs() {
-      amountInput.value = "";
-      descInput.value = "";
-    }
-
-    function toggle(id) {
-      document.querySelectorAll("[id^='screen']").forEach(s => s.classList.add("hidden"));
-      document.getElementById(id).classList.remove("hidden");
-    }
-
-    function showMain() { toggle("screen-main"); }
-    function showIncome() { toggle("screen-income"); }
-    function showDeductions() { toggle("screen-deduction"); }
-
-    function changeFY(direction) {
-      const [start] = currentFY.split("-").map(Number);
-      const now = new Date();
-      const base = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
-
-      const next = start + direction;
-      if (next < base - 3 || next > base + 3) return;
-
-      currentFY = `${next}-${next + 1}`;
-      ensureFY(currentFY);
-
-      incomes = store[currentFY].incomes;
-      deductions = store[currentFY].deductions;
-
-      setFYLabel();
-      updateUI();
-    }
-
-    function openResetModal() {
-      document.getElementById("resetText").textContent =
-        `Are you sure you want to reset ${currentFY}?`;
-      document.getElementById("resetModal").classList.remove("hidden");
-    }
-
-    function closeResetModal() {
-      document.getElementById("resetModal").classList.add("hidden");
-    }
-
-    function doResetFY() {
-      incomes.length = 0;
-      deductions.length = 0;
-      updateUI();
-      closeResetModal();
-
-      // NOTE: Removed the onboarding "LISTEN UP" popup on reset (only change).
-    }
-
-    setFYLabel();
+    loadCurrentFY();
+    renderDateButton();
     updateUI();
+
+    if (localStorage.getItem("taxTracker.seen") !== "true") {
+      openHelp();
+    }
   </script>
 </body>
 </html>
