@@ -188,6 +188,16 @@
       color: #777;
     }
 
+    .entry-input.limit-reached {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .entry-input.limit-reached::placeholder {
+      color: var(--accent);
+      opacity: 1;
+    }
+
     .desc-date-row {
       display: flex;
       gap: 12px;
@@ -283,6 +293,12 @@
       margin-top: 8px;
       color: var(--muted);
       font-size: 15px;
+    }
+
+    .page-count {
+      margin-top: 4px;
+      color: var(--muted2);
+      font-size: 14px;
     }
 
     .log-nav {
@@ -559,6 +575,7 @@
       <h2>Income Log</h2>
       <div class="tip">Enter your daily total after work</div>
       <div class="count" id="incomeCount">0 / 365 entries stored</div>
+      <div class="page-count" id="incomePageCount">Page 1/1</div>
     </div>
     <div id="incomeLog" class="log-list"></div>
   </section>
@@ -575,6 +592,7 @@
       <h2>Deduction Log</h2>
       <div class="tip">Enter your daily total after work</div>
       <div class="count" id="deductionCount">0 / 365 entries stored</div>
+      <div class="page-count" id="deductionPageCount">Page 1/1</div>
     </div>
     <div id="deductionLog" class="log-list"></div>
   </section>
@@ -729,17 +747,38 @@
       }
     }
 
+    function clearLimitReached() {
+      const amountInput = document.getElementById("amountInput");
+      if (amountInput.classList.contains("limit-reached")) {
+        amountInput.classList.remove("limit-reached");
+        amountInput.placeholder = "Amount $";
+        amountInput.value = "";
+      }
+    }
+
+    function showLimitReached() {
+      const amountInput = document.getElementById("amountInput");
+      amountInput.value = "";
+      amountInput.placeholder = "LIMIT REACHED";
+      amountInput.classList.add("limit-reached");
+    }
+
     function addEntry(isIncome) {
-      const amount = Number(document.getElementById("amountInput").value);
+      const amountInput = document.getElementById("amountInput");
+      const amount = Number(amountInput.value);
       if (!amount || amount <= 0) return;
+
+      const target = isIncome ? incomes : deductions;
+      if (target.length >= MAX_ENTRIES) {
+        showLimitReached();
+        return;
+      }
 
       const entry = {
         amount,
         desc: buildSavedDescWithDate(document.getElementById("descInput").value)
       };
 
-      const target = isIncome ? incomes : deductions;
-      if (target.length >= MAX_ENTRIES) target.shift();
       target.push(entry);
 
       if (isIncome) incomeLogPage = 0;
@@ -801,8 +840,11 @@
       const page = isDeduction ? deductionLogPage : incomeLogPage;
       const log = document.getElementById(isDeduction ? "deductionLog" : "incomeLog");
       const count = document.getElementById(isDeduction ? "deductionCount" : "incomeCount");
+      const pageCount = document.getElementById(isDeduction ? "deductionPageCount" : "incomePageCount");
 
+      const totalPages = Math.max(1, Math.ceil(list.length / LOG_PAGE_SIZE));
       count.textContent = `${list.length} / ${MAX_ENTRIES} entries stored`;
+      pageCount.textContent = `Page ${page + 1}/${totalPages}`;
       log.innerHTML = "";
 
       if (!list.length) {
@@ -940,6 +982,9 @@
       loadCurrentFY();
       updateUI();
     });
+
+    document.getElementById("amountInput").addEventListener("input", clearLimitReached);
+    document.getElementById("amountInput").addEventListener("focus", clearLimitReached);
 
     document.getElementById("addIncome").addEventListener("click", () => addEntry(true));
     document.getElementById("addDeduction").addEventListener("click", () => addEntry(false));
